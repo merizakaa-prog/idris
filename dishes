@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>قائمة المطعم الذكية | Premium Menu</title>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    
+    <style>
+        :root { 
+            --main-color: #8b0000; 
+            --bg-gray: #f8f9fa; 
+            --text-dark: #2d3436;
+            --shadow: 0 10px 30px rgba(0,0,0,0.08);
+        }
+
+        body { 
+            margin:0; 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: var(--bg-gray); 
+            color: var(--text-dark); 
+        }
+
+        /* شريط الأصناف الاحترافي */
+        .category-bar {
+            display: flex;
+            overflow-x: auto;
+            padding: 20px 15px;
+            background: #ffffff;
+            gap: 15px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: var(--shadow);
+            scroll-behavior: smooth;
+        }
+        .category-bar::-webkit-scrollbar { display: none; }
+
+        .cat {
+            min-width: 90px;
+            height: 100px;
+            background: #fff;
+            border-radius: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            border: 1px solid #f1f1f1;
+            flex-shrink: 0;
+        }
+
+        .icon-wrapper {
+            width: 45px;
+            height: 45px;
+            background: #fdf2f2;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 8px;
+            transition: 0.3s;
+        }
+
+        .cat i { font-size: 20px; color: var(--main-color); }
+        .cat span { font-size: 13px; font-weight: 700; color: #444; }
+
+        /* الحالة النشطة */
+        .cat.active {
+            background: var(--main-color);
+            transform: translateY(-5px);
+            border-color: var(--main-color);
+        }
+        .cat.active .icon-wrapper { background: rgba(255, 255, 255, 0.2); }
+        .cat.active i, .cat.active span { color: #ffffff; }
+
+        /* شبكة المنتجات */
+        .container { padding: 20px; }
+        .grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); 
+            gap: 20px; 
+        }
+
+        .card {
+            background: #fff;
+            border-radius: 25px;
+            padding: 12px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.04);
+            transition: 0.3s;
+            cursor: pointer;
+            border: 1px solid transparent;
+        }
+        .card:hover { transform: translateY(-5px); border-color: #eee; }
+        .card img { width: 100%; height: 140px; object-fit: cover; border-radius: 20px; margin-bottom: 10px; }
+        .card h3 { margin: 8px 0; font-size: 15px; color: var(--text-dark); }
+        .card p { color: var(--main-color); font-weight: 800; margin: 0; font-size: 16px; }
+
+        /* نافذة التفاصيل (Modal) */
+        .modal {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+            display: none; justify-content: center; align-items: center; z-index: 1000;
+            backdrop-filter: blur(5px);
+        }
+        .modal.show { display: flex; }
+        .modal-box {
+            background: #fff; width: 90%; max-width: 450px; border-radius: 30px;
+            padding: 25px; max-height: 85vh; overflow-y: auto; position: relative;
+        }
+        video { width: 100%; border-radius: 20px; box-shadow: var(--shadow); }
+        
+        /* السلة */
+        .cart-btn {
+            position: fixed; bottom: 25px; left: 25px; background: var(--main-color);
+            color: white; padding: 18px 28px; border-radius: 50px; z-index: 500;
+            box-shadow: 0 10px 25px rgba(139,0,0,0.4); border: none; font-weight: bold;
+        }
+        .cart-panel {
+            position: fixed; right: -350px; top: 0; width: 320px; height: 100%;
+            background: #fff; box-shadow: -10px 0 30px rgba(0,0,0,0.1);
+            padding: 25px; transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1); z-index: 600;
+        }
+        .cart-panel.show { right: 0; }
+        
+        .btn-main { 
+            width: 100%; padding: 15px; border-radius: 15px; border: none; 
+            font-weight: bold; cursor: pointer; transition: 0.3s;
+        }
+    </style>
+</head>
+<body>
+
+<div class="category-bar">
+    <div class="cat active" onclick="fetchMenu('طعام', this)">
+        <div class="icon-wrapper"><i class="fa-solid fa-utensils"></i></div>
+        <span>طعام</span>
+    </div>
+    <div class="cat" onclick="fetchMenu('مشروبات', this)">
+        <div class="icon-wrapper"><i class="fa-solid fa-wine-glass"></i></div>
+        <span>مشروبات</span>
+    </div>
+    <div class="cat" onclick="fetchMenu('تحلية', this)">
+        <div class="icon-wrapper"><i class="fa-solid fa-cake-candles"></i></div>
+        <span>تحلية</span>
+    </div>
+    <div class="cat" onclick="fetchMenu('قاطو', this)">
+        <div class="icon-wrapper"><i class="fa-solid fa-cookie-bite"></i></div>
+        <span>قاطو</span>
+    </div>
+</div>
+
+<div class="container">
+    <div id="grid" class="grid"></div>
+</div>
+
+<div class="modal" id="modal">
+    <div class="modal-box">
+        <video id="video" controls poster="https://via.placeholder.com/400x225?text=Video+Preview"></video>
+        <h2 id="title" style="margin-top:20px; color: var(--main-color);"></h2>
+        <p id="modalPrice" style="font-size: 20px; font-weight: bold;"></p>
+        <hr style="border: 0.5px solid #eee;">
+        <b>🧾 المكونات:</b>
+        <ul id="ingredients" style="color: #666; line-height: 1.6;"></ul>
+        <b>💪 الفوائد الصحية:</b>
+        <ul id="benefits" style="color: #666; line-height: 1.6;"></ul>
+        <button id="actionBtn" class="btn-main" onclick="toggleCartItem()" style="color: white; margin-top: 15px;"></button>
+        <button class="btn-main" style="background:#f1f1f1; margin-top:10px; color:#555;" onclick="closeModal()">إغلاق</button>
+    </div>
+</div>
+
+<button class="cart-btn" onclick="toggleCartPanel()">
+    <i class="fa-solid fa-cart-shopping"></i> السلة (<span id="cartCount">0</span>)
+</button>
+
+<div class="cart-panel" id="cartPanel">
+    <h2 style="border-bottom: 2px solid var(--main-color); padding-bottom: 10px;">🛒 طلباتي</h2>
+    <div id="cartList" style="margin-top: 20px;"></div>
+    <div style="margin-top:30px; border-top: 1px solid #eee; padding-top: 20px;">
+        <div style="display:flex; justify-content:space-between; font-size: 20px;">
+            <span>المجموع:</span>
+            <span style="color: var(--main-color); font-weight: 900;"><span id="cartTotal">0</span> دج</span>
+        </div>
+        <button class="btn-main" style="background:var(--text-dark); color:#fff; margin-top:20px;" onclick="sendAllToKitchen()">📤 إرسال للمطبخ</button>
+        <button class="btn-main" style="background:#f1f1f1; color:#555; margin-top:10px;" onclick="toggleCartPanel()">إغلاق</button>
+    </div>
+</div>
+
+<script>
+// --- إعدادات Firebase ---
+const firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "restaurant-e323a.firebaseapp.com",
+    projectId: "restaurant-e323a",
+    storageBucket: "restaurant-e323a.appspot.com",
+    messagingSenderId: "309092455734",
+    appId: "YOUR_APP_ID"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+let cart = [];
+let currentItem = null;
+
+function fetchMenu(catName, el) {
+    document.querySelectorAll('.cat').forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+    const grid = document.getElementById('grid');
+    grid.innerHTML = "<div style='grid-column: 1/-1; text-align:center; padding:50px;'><i class='fas fa-circle-notch fa-spin fa-2x'></i></div>";
+
+    db.collection("products").where("category", "==", catName).get().then(snap => {
+        grid.innerHTML = "";
+        if(snap.empty) grid.innerHTML = "<p style='grid-column:1/-1; text-align:center;'>لا توجد أطباق متوفرة حالياً.</p>";
+        snap.forEach(doc => {
+            const d = doc.data();
+            const itemJSON = JSON.stringify(d).replace(/'/g, "&apos;");
+            grid.innerHTML += `
+                <div class="card" onclick='openModal(${itemJSON})'>
+                    <img src="${d.img || 'https://via.placeholder.com/150'}">
+                    <h3>${d.name}</h3>
+                    <p>${d.price} دج</p>
+                </div>`;
+        });
+    });
+}
+
+function openModal(item) {
+    currentItem = item;
+    document.getElementById('modal').classList.add('show');
+    document.getElementById('video').src = item.video || "";
+    document.getElementById('title').innerText = item.name;
+    document.getElementById('modalPrice').innerText = item.price + " دج";
+    
+    const ings = Array.isArray(item.ingredients) ? item.ingredients : [];
+    const bens = Array.isArray(item.benefits) ? item.benefits : [];
+    document.getElementById('ingredients').innerHTML = ings.map(i => `<li>${i}</li>`).join('') || "غير متوفر";
+    document.getElementById('benefits').innerHTML = bens.map(b => `<li>${b}</li>`).join('') || "غير متوفر";
+    
+    updateModalButton();
+}
+
+function closeModal() {
+    document.getElementById('modal').classList.remove('show');
+    document.getElementById('video').pause();
+}
+
+function toggleCartItem() {
+    const idx = cart.findIndex(i => i.name === currentItem.name);
+    if(idx === -1) cart.push(currentItem);
+    else cart.splice(idx, 1);
+    updateModalButton();
+    renderCart();
+}
+
+function updateModalButton() {
+    const btn = document.getElementById('actionBtn');
+    const inCart = cart.some(i => i.name === currentItem.name);
+    btn.innerText = inCart ? "إزالة من السلة" : "إضافة للطلب";
+    btn.style.background = inCart ? "#e74c3c" : "#27ae60";
+}
+
+function renderCart() {
+    const list = document.getElementById('cartList');
+    let total = 0;
+    list.innerHTML = "";
+    cart.forEach((item, idx) => {
+        total += parseInt(item.price);
+        list.innerHTML += `
+            <div style="display:flex; justify-content:space-between; margin-bottom:15px; background:#f9f9f9; padding:10px; border-radius:10px;">
+                <span>${item.name}</span>
+                <span style="font-weight:bold;">${item.price} دج <i class="fa-solid fa-trash" style="color:#e74c3c; cursor:pointer; margin-right:10px;" onclick="removeItem(${idx})"></i></span>
+            </div>`;
+    });
+    document.getElementById('cartCount').innerText = cart.length;
+    document.getElementById('cartTotal').innerText = total;
+}
+
+function removeItem(idx) {
+    cart.splice(idx, 1);
+    renderCart();
+    if(currentItem) updateModalButton();
+}
+
+function toggleCartPanel() {
+    document.getElementById('cartPanel').classList.toggle('show');
+}
+
+function sendAllToKitchen() {
+    if(cart.length === 0) return alert("سلتك فارغة!");
+    const table = prompt("رقم الطاولة:");
+    if(!table) return;
+
+    db.collection("menu").add({
+        tableNumber: table,
+        items: cart.map(i => ({name: i.name, price: i.price})),
+        status: "جديد",
+        total: document.getElementById('cartTotal').innerText,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+    }).then(() => {
+        alert("✅ تم إرسال طلبك للمطبخ بنجاح!");
+        cart = [];
+        renderCart();
+        toggleCartPanel();
+    });
+}
+
+window.onload = () => fetchMenu('طعام', document.querySelector('.cat'));
+</script>
+
+</body>
+</html>
