@@ -22,7 +22,7 @@
     <div class="container">
         <h2>🍔 إضافة وجبة للمطعم</h2>
         
-        <input type="text" id="itemName" placeholder="اسم الوجبة (مثلاً: بيتزا الخضار)">
+        <input type="text" id="itemName" placeholder="اسم الوجبة (مثلاً: بيتزا)">
         <input type="number" id="itemPrice" placeholder="السعر">
         <input type="file" id="fileInput" accept="image/*,video/*">
         
@@ -34,20 +34,23 @@
     </div>
 
     <script type="module">
+        // استيراد مكتبات Firebase اللازمة
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
         import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-        // إعدادات مشروعك restaurant-e323a
+        // إعدادات مشروعك الحقيقية التي أرسلتها
         const firebaseConfig = {
-            apiKey: "AIzaSyBCmWDm0mnu5PtS7BiUh8Fe4Q9aE16qN029YOQrIyCwQV3qyPZ0ugke2R9r1O_6N7slDKiVr8gg7yRbMebuRaDY8", 
+            apiKey: "AIzaSyC77-tfeyYbFiaRuh_M2BD-L4it8GwVNiw",
             authDomain: "restaurant-e323a.firebaseapp.com",
             projectId: "restaurant-e323a",
-            storageBucket: "restaurant-e323a.appspot.com",
+            storageBucket: "restaurant-e323a.firebasestorage.app",
             messagingSenderId: "309092455734",
-            appId: "1:309092455734:web:6e643807d4766e477611ec" // هذا المعرف الافتراضي لمشروعك، تأكد منه من الإعدادات
+            appId: "1:309092455734:web:047dca273c34b956b94f97",
+            measurementId: "G-LG4SXNQ0NN"
         };
 
+        // تهيئة Firebase
         const app = initializeApp(firebaseConfig);
         const storage = getStorage(app);
         const db = getFirestore(app);
@@ -72,7 +75,7 @@
             status.innerText = "جاري الاتصال بالسيرفر...";
             progress.style.display = 'block';
 
-            // تحديد المجلد (صور أو فيديوهات) حسب نوع الملف
+            // تحديد المجلد بناءً على نوع الملف
             const folder = file.type.startsWith('video') ? 'videos/' : 'products/';
             const storageRef = ref(storage, folder + Date.now() + "_" + file.name);
             const uploadTask = uploadBytesResumable(storageRef, file);
@@ -84,7 +87,7 @@
                     status.innerText = "جاري الرفع: " + Math.round(p) + "%";
                 }, 
                 (error) => {
-                    status.innerText = "حدث خطأ: " + error.message;
+                    status.innerText = "حدث خطأ في الرفع: " + error.message;
                     status.style.color = "red";
                     uploadBtn.disabled = false;
                 }, 
@@ -92,7 +95,7 @@
                     const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
                     
                     try {
-                        // حفظ في Firestore
+                        // حفظ البيانات في قاعدة بيانات Firestore
                         await addDoc(collection(db, "menu"), {
                             name: name,
                             price: parseFloat(price),
@@ -104,17 +107,22 @@
                         status.innerText = "تمت الإضافة بنجاح! ✅";
                         status.style.color = "green";
                         
+                        // عرض معاينة إذا كانت صورة
                         if(file.type.startsWith('image')) {
                             imgPreview.src = downloadURL;
                             imgPreview.style.display = 'block';
+                        } else {
+                            imgPreview.style.display = 'none';
                         }
 
+                        // مسح الحقول
                         document.getElementById('itemName').value = "";
                         document.getElementById('itemPrice').value = "";
                         fileInput.value = "";
 
                     } catch (e) {
                         status.innerText = "خطأ في حفظ البيانات: " + e.message;
+                        status.style.color = "red";
                     }
                     uploadBtn.disabled = false;
                 }
