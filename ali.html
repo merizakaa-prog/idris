@@ -3,46 +3,58 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لوحة التحكم | رفع الوجبات</title>
+    <title>إدارة المطعم | رفع الوجبات</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, sans-serif; background-color: #f4f4f9; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
-        .upload-card { background: white; padding: 30px; border-radius: 15px; box-shadow: 0 8px 20px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; }
-        h2 { color: #333; margin-bottom: 20px; }
-        input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
-        button { width: 100%; padding: 12px; background: #28a745; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px; font-weight: bold; }
-        button:disabled { background: #6c757d; }
-        #status { margin-top: 15px; font-size: 14px; color: #555; font-weight: bold; }
-        progress { width: 100%; height: 15px; display: none; margin-top: 10px; }
+        body { font-family: 'Segoe UI', Tahoma, sans-serif; background-color: #f0f2f5; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
+        .upload-container { background: white; padding: 30px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 100%; max-width: 420px; text-align: center; }
+        h2 { color: #333; margin-bottom: 25px; }
+        input { width: 100%; padding: 12px; margin-bottom: 15px; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; font-size: 16px; }
+        button { width: 100%; padding: 14px; background: #27ae60; color: white; border: none; border-radius: 10px; cursor: pointer; font-size: 18px; font-weight: bold; transition: 0.3s; }
+        button:hover { background: #219150; }
+        button:disabled { background: #bdc3c7; cursor: not-allowed; }
+        #status { margin-top: 20px; font-size: 15px; font-weight: bold; color: #555; }
+        progress { width: 100%; height: 15px; display: none; margin-top: 15px; border-radius: 10px; }
+        .preview-box { margin-top: 15px; display: none; }
+        .preview-box img { max-width: 100%; border-radius: 10px; border: 1px solid #ddd; }
     </style>
 </head>
 <body>
 
-<div class="upload-card">
-    <h2>🍔 إضافة وجبة جديدة</h2>
-    <input type="text" id="itemName" placeholder="اسم الوجبة">
+<div class="upload-container">
+    <h2>🍕 إضافة وجبة جديدة</h2>
+    
+    <input type="text" id="itemName" placeholder="اسم الوجبة (مثلاً: شاورما)">
     <input type="number" id="itemPrice" placeholder="السعر">
     <input type="file" id="fileInput" accept="image/*,video/*">
     
-    <button id="uploadBtn">رفع البيانات الآن</button>
+    <button id="uploadBtn">رفع البيانات وحفظ الوجبة</button>
+
     <progress id="progressBar" value="0" max="100"></progress>
-    <div id="status"></div>
+    <div id="status">جاهز للرفع...</div>
+
+    <div id="previewArea" class="preview-box">
+        <p>معاينة الملف المرفوع:</p>
+        <img id="imgPreview" src="">
+    </div>
 </div>
 
 <script type="module">
+    // 1. استيراد المكتبات من CDN موثوق
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
     import { getStorage, ref, uploadBytesResumable, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
     import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    // إعداداتك الرسمية
+    // 2. إعداداتك الخاصة بمشروع restaurant-e323a
     const firebaseConfig = {
         apiKey: "AIzaSyC77-tfeyYbFiaRuh_M2BD-L4it8GwVNiw",
         authDomain: "restaurant-e323a.firebaseapp.com",
         projectId: "restaurant-e323a",
-        storageBucket: "restaurant-e323a.appspot.com", // تعديل بسيط هنا لضمان المسار الصحيح
+        storageBucket: "restaurant-e323a.appspot.com", // أو restaurant-e323a.firebasestorage.app
         messagingSenderId: "309092455734",
         appId: "1:309092455734:web:047dca273c34b956b94f97"
     };
 
+    // تهيئة التطبيق
     const app = initializeApp(firebaseConfig);
     const storage = getStorage(app);
     const db = getFirestore(app);
@@ -57,60 +69,63 @@
         const file = document.getElementById('fileInput').files[0];
 
         if (!name || !price || !file) {
-            status.innerText = "❌ يرجى ملء جميع الحقول واختيار ملف";
+            alert("يرجى تعبئة كافة الحقول!");
             return;
         }
 
         btn.disabled = true;
-        status.innerText = "⏳ جاري بدء الرفع...";
-        status.style.color = "blue";
         progress.style.display = 'block';
+        status.innerText = "⏳ جاري بدء الرفع...";
 
         try {
-            // 1. رفع الملف إلى Storage
-            const fileName = `${Date.now()}_${file.name}`;
-            const fileRef = ref(storage, `menu_content/${fileName}`);
-            const uploadTask = uploadBytesResumable(fileRef, file);
+            // 3. رفع الملف إلى Storage (في مجلد menu_items)
+            const fileName = Date.now() + "_" + file.name;
+            const storageRef = ref(storage, 'menu_items/' + fileName);
+            const uploadTask = uploadBytesResumable(storageRef, file);
 
             uploadTask.on('state_changed', 
                 (snapshot) => {
-                    const percent = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                    progress.value = percent;
-                    status.innerText = `⏳ جاري الرفع: ${Math.round(percent)}%`;
+                    const p = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                    progress.value = p;
+                    status.innerText = "⏳ جاري الرفع: " + Math.round(p) + "%";
                 }, 
                 (error) => {
-                    console.error("Storage Error:", error);
-                    status.innerText = "❌ خطأ في الرفع: " + error.message;
-                    status.style.color = "red";
+                    console.error("خطأ الرفع:", error);
+                    status.innerText = "❌ فشل الرفع: " + error.message;
                     btn.disabled = false;
                 }, 
                 async () => {
-                    // 2. الحصول على الرابط بعد النجاح
-                    const url = await getDownloadURL(uploadTask.snapshot.ref);
+                    // 4. الحصول على رابط التحميل المباشر
+                    const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
                     
-                    // 3. حفظ البيانات في Firestore
+                    // 5. حفظ السجل في قاعدة بيانات Firestore
                     await addDoc(collection(db, "menu"), {
-                        title: name,
-                        price: price,
-                        link: url,
-                        type: file.type.split('/')[0],
+                        name: name,
+                        price: parseFloat(price),
+                        imageUrl: downloadURL,
+                        type: file.type.split('/')[0], // لتحديد هل هو image أو video
                         createdAt: new Date()
                     });
 
-                    status.innerText = "✅ تم الرفع والحفظ بنجاح!";
+                    status.innerText = "✅ تمت العملية بنجاح!";
                     status.style.color = "green";
-                    btn.disabled = false;
-                    progress.style.display = 'none';
                     
-                    // تنظيف الحقول
+                    // إظهار المعاينة
+                    if(file.type.startsWith('image')) {
+                        document.getElementById('imgPreview').src = downloadURL;
+                        document.getElementById('previewArea').style.display = 'block';
+                    }
+
+                    // إعادة ضبط الواجهة
+                    btn.disabled = false;
                     document.getElementById('itemName').value = "";
                     document.getElementById('itemPrice').value = "";
                     document.getElementById('fileInput').value = "";
                 }
             );
-        } catch (e) {
-            console.error("Global Error:", e);
-            status.innerText = "❌ حدث خطأ غير متوقع";
+        } catch (err) {
+            console.error("خطأ عام:", err);
+            status.innerText = "❌ حدث خطأ غير متوقع!";
             btn.disabled = false;
         }
     };
