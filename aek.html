@@ -3,46 +3,191 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>المنيو المباشر</title>
+    <title>قائمة الطعام الذكية</title>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    
     <style>
-        body { font-family: sans-serif; background: #f8f9fa; margin: 0; padding: 20px; text-align: center; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; max-width: 1000px; margin: auto; }
-        .item { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-        .item img { width: 100%; height: 180px; object-fit: cover; border-radius: 8px; }
-        .price { color: #e67e22; font-weight: bold; font-size: 1.2rem; }
+        :root { --main-color: #8b0000; --bg-gray: #f4f4f4; }
+        body { margin:0; font-family: 'Tahoma', sans-serif; background: var(--bg-gray); color: #333; overflow-x: hidden; }
+        
+        /* شريط الأقسام العلوي */
+        .category-bar {
+            display:flex; overflow-x: auto; white-space: nowrap;
+            padding:15px; background:#fff; box-shadow:0 4px 12px rgba(0,0,0,0.1); 
+            position:sticky; top:0; z-index:100; gap: 10px; scrollbar-width: none;
+        }
+        .category-bar::-webkit-scrollbar { display: none; }
+
+        .cat {
+            min-width:85px; height:85px; background:#fff; border-radius:15px;
+            display:inline-flex; flex-direction:column; align-items:center; justify-content:center;
+            cursor:pointer; transition: 0.3s; border: 1px solid #eee; flex-shrink: 0;
+        }
+        .cat span { font-size:13px; margin-top:5px; font-weight: bold; }
+        .cat.active { background: var(--main-color); color:white; transform: scale(1.05); }
+
+        /* شبكة المنتجات */
+        .container { padding:20px; }
+        .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:15px; }
+
+        .card {
+            background:#fff; border-radius:20px; padding:10px; text-align:center;
+            box-shadow:0 8px 15px rgba(0,0,0,0.05); transition:.3s; cursor:pointer;
+        }
+        .card:active { transform: scale(0.95); }
+        .card img { width:100%; height:130px; object-fit: cover; border-radius:15px; }
+        .card h3 { margin:8px 0; font-size:15px; }
+        .card p { color: var(--main-color); font-weight: bold; margin:0; font-size: 14px; }
+
+        /* نافذة التفاصيل (المودال) */
+        .modal {
+            position:fixed; inset:0; background:rgba(0,0,0,0.8);
+            display:none; justify-content:center; align-items:center; z-index:1000; padding: 15px;
+        }
+        .modal.show { display:flex; }
+        .modal-box {
+            background:#fff; width:100%; max-width:400px; border-radius:25px;
+            padding:20px; max-height: 90vh; overflow-y: auto; position: relative;
+        }
+        video { width:100%; border-radius:15px; background:#000; margin-bottom: 10px; }
+        
+        /* السلة */
+        .cart-btn {
+            position:fixed; bottom:20px; left:20px; background: var(--main-color);
+            color:white; padding:12px 20px; border-radius:50px; z-index:500;
+            box-shadow: 0 5px 15px rgba(139,0,0,0.3); border: none; font-weight: bold;
+        }
     </style>
 </head>
 <body>
 
-<h1>🍽️ منيو المطعم</h1>
-<div id="menuContainer" class="grid">⏳ جاري التحميل...</div>
+<div class="category-bar">
+    <div class="cat active" onclick="fetchMenu('طعام', this)">🍽️<span>طعام</span></div>
+    <div class="cat" onclick="fetchMenu('مشروبات', this)">🥤<span>مشروبات</span></div>
+    <div class="cat" onclick="fetchMenu('تحلية', this)">🍰<span>تحلية</span></div>
+    <div class="cat" onclick="fetchMenu('قاطو', this)">🍪<span>قاطو</span></div>
+</div>
 
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+<div class="container">
+    <div id="grid" class="grid"></div>
+</div>
+
+<div class="modal" id="modal">
+    <div class="modal-box">
+        <video id="video" controls></video>
+        <h3 id="title" style="color:var(--main-color); margin-bottom:5px;"></h3>
+        <p id="modalPrice" style="font-weight:bold; margin-bottom:15px;"></p>
+        
+        <div style="text-align: right; font-size: 14px;">
+            <b>🧾 المكونات:</b>
+            <ul id="ingredients" style="padding-right: 20px;"></ul>
+            <b>💪 الفوائد:</b>
+            <ul id="benefits" style="padding-right: 20px;"></ul>
+        </div>
+
+        <button id="addBtn" style="width:100%; padding:12px; border-radius:12px; border:none; color:white; font-weight:bold; margin-top:10px;" onclick="addToCart()"></button>
+        <button style="width:100%; padding:10px; margin-top:10px; background:#eee; border:none; border-radius:12px;" onclick="closeModal()">إغلاق</button>
+    </div>
+</div>
+
+<button class="cart-btn" onclick="alert('سيتم فتح السلة قريباً!')">🛒 السلة (<span id="cartCount">0</span>)</button>
 
 <script>
-    const firebaseConfig = { databaseURL: "https://andr-eccef-default-rtdb.firebaseio.com/" };
-    firebase.initializeApp(firebaseConfig);
-    const database = firebase.database();
+// --- إعدادات Firebase (يجب أن تكون نفس إعدادات صفحة الإدارة) ---
+const firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "restaurant-e323a.firebaseapp.com",
+    projectId: "restaurant-e323a",
+    storageBucket: "restaurant-e323a.appspot.com",
+    messagingSenderId: "309092455734",
+    appId: "YOUR_APP_ID"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
 
-    database.ref('menu').on('value', (snapshot) => {
-        const data = snapshot.val();
-        const container = document.getElementById('menuContainer');
-        
-        if (!data) {
-            container.innerHTML = "<p>المنيو فارغ حالياً.</p>";
+let currentItem = null;
+let cart = [];
+
+// دالة جلب البيانات من Firestore
+function fetchMenu(category, element) {
+    // تغيير الحالة النشطة للأزرار
+    document.querySelectorAll('.cat').forEach(c => c.classList.remove('active'));
+    element.classList.add('active');
+
+    const grid = document.getElementById('grid');
+    grid.innerHTML = "<p style='grid-column: 1/-1;'>جاري التحميل...</p>";
+
+    // البحث في مجموعة "products" حسب القسم
+    db.collection("products").where("category", "==", category).get().then(snap => {
+        grid.innerHTML = "";
+        if(snap.empty) {
+            grid.innerHTML = "<p style='grid-column: 1/-1;'>لا توجد أطباق في هذا القسم حالياً.</p>";
             return;
         }
-
-        const items = Object.values(data).reverse();
-        container.innerHTML = items.map(item => `
-            <div class="item">
-                <img src="${item.itemImage}">
-                <h3>${item.itemName}</h3>
-                <p class="price">${item.itemPrice} د.ج</p>
-            </div>
-        `).join('');
+        snap.forEach(doc => {
+            const data = doc.data();
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.onclick = () => openModal(data);
+            card.innerHTML = `
+                <img src="${data.img || 'https://via.placeholder.com/150'}">
+                <h3>${data.name}</h3>
+                <p>${data.price} دج</p>
+            `;
+            grid.appendChild(card);
+        });
     });
+}
+
+function openModal(item) {
+    currentItem = item;
+    document.getElementById('modal').classList.add('show');
+    document.getElementById('title').innerText = item.name;
+    document.getElementById('modalPrice').innerText = "السعر: " + item.price + " دج";
+    
+    // الفيديو
+    const video = document.getElementById('video');
+    if(item.video) {
+        video.src = item.video;
+        video.style.display = "block";
+    } else {
+        video.style.display = "none";
+    }
+
+    // القوائم (المكونات والفوائد)
+    document.getElementById('ingredients').innerHTML = (item.ingredients || []).map(i => `<li>${i}</li>`).join('') || "غير متوفر";
+    document.getElementById('benefits').innerHTML = (item.benefits || []).map(b => `<li>${b}</li>`).join('') || "غير متوفر";
+
+    updateButtonState();
+}
+
+function closeModal() {
+    document.getElementById('modal').classList.remove('show');
+    document.getElementById('video').pause();
+}
+
+function addToCart() {
+    const index = cart.findIndex(i => i.name === currentItem.name);
+    if(index === -1) {
+        cart.push(currentItem);
+    } else {
+        cart.splice(index, 1);
+    }
+    document.getElementById('cartCount').innerText = cart.length;
+    updateButtonState();
+}
+
+function updateButtonState() {
+    const btn = document.getElementById('addBtn');
+    const isInCart = cart.some(i => i.name === currentItem.name);
+    btn.innerText = isInCart ? "إزالة من السلة ✖" : "إضافة للطلب 🛒";
+    btn.style.background = isInCart ? "#ff4444" : "#2ecc71";
+}
+
+// التشغيل التلقائي عند فتح الصفحة
+window.onload = () => fetchMenu('طعام', document.querySelector('.cat'));
 </script>
+
 </body>
 </html>
