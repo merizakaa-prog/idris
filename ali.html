@@ -14,18 +14,15 @@
         h2 { text-align: center; color: var(--main); }
         label { display: block; margin-top: 15px; font-weight: bold; font-size: 14px; }
         input, select, textarea { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; }
-        .btn-group { display: flex; gap: 10px; margin-top: 20px; }
-        button { flex: 1; padding: 15px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; transition: 0.3s; }
-        .btn-add { background: var(--secondary); color: white; }
-        .btn-add:hover { background: #27ae60; }
-        #status { text-align: center; margin-top: 15px; font-weight: bold; }
-        .info-msg { font-size: 12px; color: #666; margin-top: 2px; }
+        .btn-add { width: 100%; padding: 15px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; transition: 0.3s; background: var(--secondary); color: white; margin-top: 20px; }
+        #status { text-align: center; margin-top: 15px; font-weight: bold; line-height: 1.6; }
+        .file-info { font-size: 11px; color: #d35400; margin-top: 5px; }
     </style>
 </head>
 <body>
 
 <div class="admin-container">
-    <h2>➕ إضافة طبق جديد للقائمة</h2>
+    <h2>➕ إضافة طبق جديد</h2>
     
     <label>القسم (Category):</label>
     <select id="itemCategory">
@@ -41,11 +38,12 @@
     <label>السعر (دج):</label>
     <input type="number" id="itemPrice" placeholder="مثلاً: 1200">
 
-    <label>رابط الصورة (URL):</label>
-    <input type="text" id="itemImg" placeholder="رابط الصورة من Cloudinary أو غيره">
+    <label>اختيار صورة الطبق 📷:</label>
+    <input type="file" id="fileImg" accept="image/*">
 
-    <label>رابط الفيديو (URL):</label>
-    <input type="text" id="itemVideo" placeholder="رابط فيديو قصير (اختياري)">
+    <label>اختيار فيديو قصير 🎥 (اختياري):</label>
+    <input type="file" id="fileVideo" accept="video/*">
+    <div class="file-info">* يفضل أن يكون الفيديو قصير جداً (أقل من 10 ثواني)</div>
 
     <label>المكونات (افصل بينها بفاصلة):</label>
     <textarea id="itemIngredients" placeholder="طماطم, جبن, زيتون..."></textarea>
@@ -53,17 +51,15 @@
     <label>الفوائد (افصل بينها بفاصلة):</label>
     <textarea id="itemBenefits" placeholder="غني بالبروتين, طاقة فورية..."></textarea>
 
-    <div class="btn-group">
-        <button class="btn-add" onclick="saveToFirestore()">حفظ ونشر الطبق ✅</button>
-    </div>
+    <button class="btn-add" id="submitBtn" onclick="handleUpload()">حفظ ونشر الطبق الآن ✅</button>
 
     <p id="status"></p>
 </div>
 
 <script>
-// --- يجب أن تكون نفس إعدادات صفحة المنيو تماماً ---
+// --- إعدادات Firebase ---
 const firebaseConfig = {
-    apiKey: "YOUR_API_KEY", // ضعي مفتاحك هنا
+    apiKey: "YOUR_API_KEY",
     authDomain: "restaurant-e323a.firebaseapp.com",
     projectId: "restaurant-e323a",
     storageBucket: "restaurant-e323a.appspot.com",
@@ -73,47 +69,79 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
-function saveToFirestore() {
+// --- إعدادات Cloudinary ---
+const CLOUDINARY_URL = "https://api.cloudinary.com/v1_1/dzrrirfig/upload";
+const CLOUDINARY_PRESET = "restaurant_preset";
+
+async function uploadFile(file) {
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("upload_preset", CLOUDINARY_PRESET);
+    
+    const resp = await fetch(CLOUDINARY_URL, { method: "POST", body: formData });
+    const data = await resp.json();
+    return data.secure_url;
+}
+
+async function handleUpload() {
     const status = document.getElementById('status');
+    const btn = document.getElementById('submitBtn');
+    const imgFile = document.getElementById('fileImg').files[0];
+    const videoFile = document.getElementById('fileVideo').files[0];
+    
     const name = document.getElementById('itemName').value;
     const price = document.getElementById('itemPrice').value;
-    const category = document.getElementById('itemCategory').value;
-    const img = document.getElementById('itemImg').value;
-    const video = document.getElementById('itemVideo').value;
-    
-    // تحويل النص إلى مصفوفة (Array) كما يتوقع كود المنيو
-    const ingredients = document.getElementById('itemIngredients').value.split(',').map(s => s.trim());
-    const benefits = document.getElementById('itemBenefits').value.split(',').map(s => s.trim());
 
-    if(!name || !price || !img) {
-        alert("يرجى ملء الاسم والسعر والصورة على الأقل!");
+    if(!name || !price || !imgFile) {
+        alert("يرجى إدخال الاسم والسعر واختيار صورة!");
         return;
     }
 
-    status.innerText = "⏳ جاري الحفظ...";
+    btn.disabled = true;
     status.style.color = "orange";
+    status.innerText = "⏳ جاري معالجة الملفات... قد يستغرق الرفع ثوانٍ";
 
-    // الإضافة إلى مجموعة "products" لأن المنيو يقرأ منها
-    db.collection("products").add({
-        name: name,
-        price: price,
-        category: category,
-        img: img,
-        video: video,
-        ingredients: ingredients,
-        benefits: benefits,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
-    })
-    .then(() => {
-        status.innerText = "✅ تم إضافة " + name + " بنجاح!";
+    try {
+        // 1. رفع الصورة
+        const imgUrl = await uploadFile(imgFile);
+        
+        // 2. رفع الفيديو (إذا وُجد)
+        let videoUrl = "";
+        if(videoFile) {
+            status.innerText = "⏳ جاري رفع الفيديو الآن...";
+            videoUrl = await uploadFile(videoFile);
+        }
+
+        // 3. حفظ البيانات في Firestore
+        const ingredients = document.getElementById('itemIngredients').value.split(',').map(s => s.trim());
+        const benefits = document.getElementById('itemBenefits').value.split(',').map(s => s.trim());
+
+        await db.collection("products").add({
+            name: name,
+            price: price,
+            category: document.getElementById('itemCategory').value,
+            img: imgUrl,
+            video: videoUrl,
+            ingredients: ingredients,
+            benefits: benefits,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
         status.style.color = "green";
-        // تصفير الحقول
-        document.querySelectorAll('input, textarea').forEach(el => el.value = "");
-    })
-    .catch(err => {
-        status.innerText = "❌ خطأ: " + err.message;
+        status.innerText = "✅ تم بنجاح! الطبق متاح الآن في المنيو.";
+        resetForm();
+
+    } catch (err) {
         status.style.color = "red";
-    });
+        status.innerText = "❌ فشل الرفع: " + err.message;
+        console.error(err);
+    } finally {
+        btn.disabled = false;
+    }
+}
+
+function resetForm() {
+    document.querySelectorAll('input, textarea').forEach(el => el.value = "");
 }
 </script>
 
