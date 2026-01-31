@@ -1,130 +1,35 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>منيو المطعم | أهلاً بكم</title>
-    <style>
-        :root {
-            --primary-color: #e67e22;
-            --bg-color: #f8f9fa;
-            --text-dark: #2d3436;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: var(--bg-color);
-            margin: 0;
-            padding: 0;
-        }
-
-        header {
-            background-color: var(--primary-color);
-            color: white;
-            text-align: center;
-            padding: 2rem 1rem;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-        }
-
-        .container {
-            max-width: 1000px;
-            margin: 20px auto;
-            padding: 0 15px;
-        }
-
-        .menu-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 25px;
-            padding: 20px 0;
-        }
-
-        .menu-item {
-            background: white;
-            border-radius: 15px;
-            overflow: hidden;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.05);
-            transition: transform 0.3s ease;
-        }
-
-        .menu-item:hover {
-            transform: translateY(-5px);
-        }
-
-        .menu-item img {
-            width: 100%;
-            height: 200px;
-            object-fit: cover;
-        }
-
-        .item-info {
-            padding: 15px;
-            text-align: center;
-        }
-
-        .item-name {
-            font-size: 1.25rem;
-            color: var(--text-dark);
-            margin: 10px 0;
-        }
-
-        .item-price {
-            font-weight: bold;
-            color: var(--primary-color);
-            font-size: 1.1rem;
-        }
-
-        .empty-msg {
-            text-align: center;
-            grid-column: 1 / -1;
-            padding: 50px;
-            color: #636e72;
-        }
-    </style>
-</head>
-<body>
-
-<header>
-    <h1>🍽️ منيو مطعمنا الشهي</h1>
-    <p>اختر وجبتك المفضلة واستمتع بالمذاق</p>
-</header>
-
-<div class="container">
-    <div id="menuGrid" class="menu-grid">
-        </div>
-</div>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
 <script>
+    const firebaseConfig = {
+        databaseURL: "https://menu-restaurant-default-rtdb.firebaseio.com/"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+
     function loadMenu() {
         const menuGrid = document.getElementById('menuGrid');
-        // جلب البيانات من الذاكرة المحلية
-        const menuData = JSON.parse(localStorage.getItem('restaurantMenu')) || [];
+        
+        // استماع للتغييرات في قاعدة البيانات فوراً
+        database.ref('menu').on('value', (snapshot) => {
+            const data = snapshot.val();
+            if (!data) {
+                menuGrid.innerHTML = "<h3>لا توجد وجبات حالياً</h3>";
+                return;
+            }
 
-        if (menuData.length === 0) {
-            menuGrid.innerHTML = `
-                <div class="empty-msg">
-                    <h3>لا توجد وجبات مضافة حالياً.</h3>
-                    <p>يرجى إضافة وجبات من لوحة التحكم.</p>
+            const items = Object.values(data);
+            menuGrid.innerHTML = items.map(item => `
+                <div class="menu-item">
+                    <img src="${item.image}">
+                    <div class="item-info">
+                        <h3>${item.name}</h3>
+                        <p>${item.price} د.ج</p>
+                    </div>
                 </div>
-            `;
-            return;
-        }
-
-        // بناء العناصر وعرضها
-        menuGrid.innerHTML = menuData.map(item => `
-            <div class="menu-item">
-                <img src="${item.image}" alt="${item.name}">
-                <div class="item-info">
-                    <h3 class="item-name">${item.name}</h3>
-                    <div class="item-price">${item.price} د.ج</div>
-                </div>
-            </div>
-        `).join('');
+            `).join('');
+        });
     }
-
-    // تحديث المنيو بمجرد تحميل الصفحة
     window.onload = loadMenu;
 </script>
-
-</body>
-</html>
