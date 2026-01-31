@@ -1,29 +1,59 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة التحكم | إضافة وجبات</title>
+    <style>
+        :root { --primary: #e67e22; --dark: #2c3e50; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; margin: 0; padding: 20px; }
+        .admin-card { background: white; max-width: 500px; margin: auto; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        h2 { color: var(--dark); text-align: center; }
+        input, button { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; }
+        button { background: var(--primary); color: white; border: none; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        button:hover { background: #d35400; }
+        #status { text-align: center; font-weight: bold; font-size: 0.9rem; margin-top: 10px; }
+        .preview-img { width: 100%; height: 200px; object-fit: cover; border-radius: 8px; display: none; margin-top: 10px; border: 1px solid #ddd; }
+    </style>
+</head>
+<body>
+
+<div class="admin-card">
+    <h2>➕ إضافة وجبة للمنيو</h2>
+    <input type="text" id="itemName" placeholder="اسم الوجبة">
+    <input type="number" id="itemPrice" placeholder="السعر (د.ج)">
+    <input type="file" id="imageInput" accept="image/*">
+    <button onclick="addNewItem()">حفظ ونشر الوجبة</button>
+    <p id="status"></p>
+    <img id="preview" class="preview-img">
+</div>
+
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
 <script>
-    // إعدادات قاعدة البيانات (Firebase)
-    const firebaseConfig = {
-        databaseURL: "https://menu-restaurant-default-rtdb.firebaseio.com/" 
-    };
-    firebase.initializeApp(firebaseConfig);
+    // إعدادات Firebase
+    const firebaseConfig = { databaseURL: "https://menu-restaurant-default-rtdb.firebaseio.com/" };
+    if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
     const database = firebase.database();
 
     const cloudName = "dzrrirfig"; 
-    const uploadPreset = "my_restaurant_preset"; 
+    const uploadPreset = "restaurant_preset"; 
 
     async function addNewItem() {
         const name = document.getElementById('itemName').value;
         const price = document.getElementById('itemPrice').value;
         const fileInput = document.getElementById('imageInput');
         const status = document.getElementById('status');
+        const preview = document.getElementById('preview');
 
         if (!name || !price || !fileInput.files[0]) {
-            alert("الرجاء ملء جميع الخانات!"); return;
+            alert("يرجى ملء جميع الخانات!"); return;
         }
 
-        status.innerText = "⏳ جاري الرفع للسحابة...";
-        
+        status.innerText = "⏳ جاري الرفع...";
+        status.style.color = "orange";
+
         const formData = new FormData();
         formData.append('file', fileInput.files[0]);
         formData.append('upload_preset', uploadPreset);
@@ -35,18 +65,28 @@
             const data = await response.json();
 
             if (data.secure_url) {
-                // حفظ في Firebase بدلاً من LocalStorage لكي يراها الجميع
-                const newItemRef = database.ref('menu').push();
-                await newItemRef.set({
+                // حفظ البيانات في Firebase
+                await database.ref('menu').push({
                     name: name,
                     price: price,
                     image: data.secure_url
                 });
 
-                status.innerText = "✅ تم النشر بنجاح للجميع!";
+                preview.src = data.secure_url;
+                preview.style.display = "block";
+                status.innerText = "✅ تم النشر بنجاح!";
+                status.style.color = "green";
+                
+                // تفريغ الخانات
                 document.getElementById('itemName').value = "";
                 document.getElementById('itemPrice').value = "";
+            } else {
+                status.innerText = "❌ خطأ في الرفع: " + data.error.message;
             }
-        } catch (e) { status.innerText = "❌ خطأ في الاتصال"; }
+        } catch (e) {
+            status.innerText = "❌ فشل الاتصال بالسيرفر";
+        }
     }
 </script>
+</body>
+</html>
