@@ -3,62 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لوحة تحكم المطعم | رفع الصور</title>
+    <title>تعديل المنيو | لوحة التحكم</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7f6; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
-        .container { background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); width: 90%; max-width: 450px; text-align: center; }
-        h1 { color: #333; font-size: 1.5rem; margin-bottom: 1.5rem; }
-        .upload-area { border: 2px dashed #3498db; padding: 20px; border-radius: 8px; margin-bottom: 20px; transition: 0.3s; }
-        .upload-area:hover { border-color: #2ecc71; background-color: #f9fdfb; }
-        input[type="file"] { margin: 10px 0; width: 100%; }
-        button { background-color: #3498db; color: white; border: none; padding: 12px 20px; border-radius: 6px; cursor: pointer; font-size: 1rem; width: 100%; transition: 0.3s; }
-        button:hover { background-color: #2980b9; }
-        #status { margin-top: 15px; font-weight: bold; color: #555; }
-        #preview { margin-top: 20px; max-width: 100%; border-radius: 8px; display: none; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        .url-box { margin-top: 15px; background: #eee; padding: 10px; font-size: 0.8rem; word-break: break-all; border-radius: 4px; display: none; }
+        :root { --primary: #e67e22; --dark: #2c3e50; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; margin: 0; padding: 20px; }
+        .admin-card { background: white; max-width: 500px; margin: auto; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        h2 { color: var(--dark); text-align: center; }
+        input, button { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; }
+        button { background: var(--primary); color: white; border: none; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        button:hover { background: #d35400; }
+        .preview-img { width: 100%; height: 200px; object-fit: cover; border-radius: 8px; display: none; margin-top: 10px; }
+        #status { text-align: center; font-weight: bold; font-size: 0.9rem; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h1>📸 إضافة صور للمنيو</h1>
+<div class="admin-card">
+    <h2>➕ إضافة وجبة جديدة</h2>
     
-    <div class="upload-area">
+    <input type="text" id="itemName" placeholder="اسم الوجبة (مثلاً: بيتزا مارغريتا)">
+    <input type="number" id="itemPrice" placeholder="السعر (مثلاً: 1200 د.ج)">
+    
+    <div style="border: 2px dashed #ccc; padding: 10px; text-align: center;">
         <input type="file" id="imageInput" accept="image/*">
     </div>
 
-    <button onclick="uploadToCloudinary()">رفع الصورة الآن</button>
-
-    <p id="status">جاهز لاختيار الصورة...</p>
+    <button onclick="addNewItem()">حفظ وإضافة للمنيو</button>
     
-    <div id="urlContainer" class="url-box"></div>
-    <img id="preview" src="" alt="معاينة الصورة">
+    <p id="status"></p>
+    <img id="preview" class="preview-img">
 </div>
 
 <script>
-    // الإعدادات الخاصة بك
     const cloudName = "dzrrirfig"; 
-    const uploadPreset = "restaurant_preset"; // تأكد أنك أنشأته كـ Unsigned في إعدادات Cloudinary
+    const uploadPreset = "my_restaurant_preset"; 
 
-    async function uploadToCloudinary() {
+    async function addNewItem() {
+        const name = document.getElementById('itemName').value;
+        const price = document.getElementById('itemPrice').value;
         const fileInput = document.getElementById('imageInput');
         const status = document.getElementById('status');
         const preview = document.getElementById('preview');
-        const urlBox = document.getElementById('urlContainer');
 
-        // التأكد من اختيار ملف
-        if (!fileInput.files[0]) {
-            alert("من فضلك اختر صورة أولاً من جهازك");
+        if (!name || !price || !fileInput.files[0]) {
+            alert("الرجاء ملء جميع الخانات واختيار صورة!");
             return;
         }
 
-        const file = fileInput.files[0];
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('upload_preset', uploadPreset);
+        status.innerText = "⏳ جاري رفع الصورة...";
+        status.style.color = "orange";
 
-        status.innerText = "⏳ جاري الرفع إلى السحابة...";
-        status.style.color = "#f39c12";
+        const formData = new FormData();
+        formData.append('file', fileInput.files[0]);
+        formData.append('upload_preset', uploadPreset);
 
         try {
             const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
@@ -69,29 +66,35 @@
             const data = await response.json();
 
             if (data.secure_url) {
-                status.innerText = "✅ تم الرفع بنجاح!";
-                status.style.color = "#27ae60";
-
-                // إظهار المعاينة والرابط
+                // 1. إظهار المعاينة
                 preview.src = data.secure_url;
-                preview.style.display = "inline-block";
-                
-                urlBox.innerText = "رابط الصورة للمنيو: " + data.secure_url;
-                urlBox.style.display = "block";
+                preview.style.display = "block";
 
-                console.log("رابط الصورة المباشر:", data.secure_url);
-            } else {
-                status.innerText = "❌ فشل الرفع: " + (data.error ? data.error.message : "خطأ غير متوقع");
-                status.style.color = "#e74c3c";
-                console.error("Cloudinary Error:", data);
+                // 2. تجهيز بيانات الوجبة
+                const newItem = {
+                    id: Date.now(),
+                    name: name,
+                    price: price,
+                    image: data.secure_url
+                };
+
+                // 3. الحفظ في الذاكرة (localStorage)
+                let menuData = JSON.parse(localStorage.getItem('restaurantMenu')) || [];
+                menuData.push(newItem);
+                localStorage.setItem('restaurantMenu', JSON.stringify(menuData));
+
+                status.innerText = "✅ تم تحديث المنيو بنجاح!";
+                status.style.color = "green";
+
+                // تفريغ الخانات
+                document.getElementById('itemName').value = "";
+                document.getElementById('itemPrice').value = "";
             }
         } catch (error) {
-            status.innerText = "❌ حدث خطأ في الاتصال بالإنترنت";
-            status.style.color = "#e74c3c";
-            console.error("Fetch Error:", error);
+            status.innerText = "❌ فشل الاتصال!";
+            console.error(error);
         }
     }
 </script>
-
 </body>
 </html>
