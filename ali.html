@@ -3,20 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لوحة تحكم القائمة الذكية</title>
+    <title>لوحة التحكم | رفع الأطباق</title>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-    
     <style>
-        :root { --main: #8b0000; --secondary: #2ecc71; }
+        :root { --main: #8b0000; --green: #2ecc71; }
         body { font-family: 'Tahoma', sans-serif; background: #f4f4f4; padding: 20px; direction: rtl; }
-        .admin-container { max-width: 600px; margin: auto; background: #fff; padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        .admin-container { max-width: 500px; margin: auto; background: #fff; padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
         h2 { text-align: center; color: var(--main); }
         label { display: block; margin-top: 15px; font-weight: bold; font-size: 14px; }
         input, select, textarea { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; }
-        .btn-add { width: 100%; padding: 15px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; transition: 0.3s; background: var(--secondary); color: white; margin-top: 20px; }
-        #status { text-align: center; margin-top: 15px; font-weight: bold; line-height: 1.6; }
-        .file-info { font-size: 11px; color: #d35400; margin-top: 5px; }
+        button { width: 100%; padding: 15px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; background: var(--green); color: white; margin-top: 20px; font-size: 16px; }
+        button:disabled { background: #ccc; }
+        #status { text-align: center; margin-top: 15px; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -24,7 +23,7 @@
 <div class="admin-container">
     <h2>➕ إضافة طبق جديد</h2>
     
-    <label>القسم (Category):</label>
+    <label>القسم:</label>
     <select id="itemCategory">
         <option value="طعام">طعام 🍽️</option>
         <option value="مشروبات">مشروبات 🥤</option>
@@ -32,34 +31,25 @@
         <option value="قاطو">قاطو 🍪</option>
     </select>
 
-    <label>اسم الطبق:</label>
-    <input type="text" id="itemName" placeholder="مثلاً: بيتزا مارغريتا">
-
-    <label>السعر (دج):</label>
-    <input type="number" id="itemPrice" placeholder="مثلاً: 1200">
-
-    <label>اختيار صورة الطبق 📷:</label>
+    <input type="text" id="itemName" placeholder="اسم الطبق">
+    <input type="number" id="itemPrice" placeholder="السعر (دج)">
+    
+    <label>صورة الطبق:</label>
     <input type="file" id="fileImg" accept="image/*">
 
-    <label>اختيار فيديو قصير 🎥 (اختياري):</label>
+    <label>فيديو قصير (اختياري):</label>
     <input type="file" id="fileVideo" accept="video/*">
-    <div class="file-info">* يفضل أن يكون الفيديو قصير جداً (أقل من 10 ثواني)</div>
 
-    <label>المكونات (افصل بينها بفاصلة):</label>
-    <textarea id="itemIngredients" placeholder="طماطم, جبن, زيتون..."></textarea>
+    <textarea id="itemIngredients" placeholder="المكونات (افصل بينها بفاصلة ,)"></textarea>
+    <textarea id="itemBenefits" placeholder="الفوائد (افصل بينها بفاصلة ,)"></textarea>
 
-    <label>الفوائد (افصل بينها بفاصلة):</label>
-    <textarea id="itemBenefits" placeholder="غني بالبروتين, طاقة فورية..."></textarea>
-
-    <button class="btn-add" id="submitBtn" onclick="handleUpload()">حفظ ونشر الطبق الآن ✅</button>
-
+    <button id="submitBtn" onclick="handleUpload()">حفظ ونشر الطبق ✅</button>
     <p id="status"></p>
 </div>
 
 <script>
-// --- إعدادات Firebase ---
 const firebaseConfig = {
-    apiKey: "YOUR_API_KEY",
+    apiKey: "YOUR_API_KEY", // استبدل بـ API Key الخاص بك إذا كان متوفراً
     authDomain: "restaurant-e323a.firebaseapp.com",
     projectId: "restaurant-e323a",
     storageBucket: "restaurant-e323a.appspot.com",
@@ -69,17 +59,22 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
-// --- إعدادات Cloudinary ---
-const CLOUDINARY_URL = "https://api.cloudinary.com/v1_1/dzrrirfig/upload";
-const CLOUDINARY_PRESET = "restaurant_preset";
+// إعدادات Cloudinary
+const CLOUD_NAME = "dzrrirfig";
+const PRESET = "restaurant_preset";
 
-async function uploadFile(file) {
+async function uploadToCloudinary(file) {
     const formData = new FormData();
     formData.append("file", file);
-    formData.append("upload_preset", CLOUDINARY_PRESET);
+    formData.append("upload_preset", PRESET);
     
-    const resp = await fetch(CLOUDINARY_URL, { method: "POST", body: formData });
-    const data = await resp.json();
+    // استخدام "auto" يسمح برفع الصور والفيديوهات تلقائياً
+    const response = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/auto/upload`, {
+        method: "POST",
+        body: formData
+    });
+    const data = await response.json();
+    if (!data.secure_url) throw new Error(data.error.message);
     return data.secure_url;
 }
 
@@ -88,62 +83,40 @@ async function handleUpload() {
     const btn = document.getElementById('submitBtn');
     const imgFile = document.getElementById('fileImg').files[0];
     const videoFile = document.getElementById('fileVideo').files[0];
-    
-    const name = document.getElementById('itemName').value;
-    const price = document.getElementById('itemPrice').value;
 
-    if(!name || !price || !imgFile) {
-        alert("يرجى إدخال الاسم والسعر واختيار صورة!");
-        return;
+    if (!document.getElementById('itemName').value || !imgFile) {
+        alert("الاسم والصورة ضروريان!"); return;
     }
 
     btn.disabled = true;
+    status.innerText = "⏳ جاري الرفع... يرجى الانتظار";
     status.style.color = "orange";
-    status.innerText = "⏳ جاري معالجة الملفات... قد يستغرق الرفع ثوانٍ";
 
     try {
-        // 1. رفع الصورة
-        const imgUrl = await uploadFile(imgFile);
-        
-        // 2. رفع الفيديو (إذا وُجد)
-        let videoUrl = "";
-        if(videoFile) {
-            status.innerText = "⏳ جاري رفع الفيديو الآن...";
-            videoUrl = await uploadFile(videoFile);
-        }
-
-        // 3. حفظ البيانات في Firestore
-        const ingredients = document.getElementById('itemIngredients').value.split(',').map(s => s.trim());
-        const benefits = document.getElementById('itemBenefits').value.split(',').map(s => s.trim());
+        const imgUrl = await uploadToCloudinary(imgFile);
+        let videoUrl = videoFile ? await uploadToCloudinary(videoFile) : "";
 
         await db.collection("products").add({
-            name: name,
-            price: price,
+            name: document.getElementById('itemName').value,
+            price: document.getElementById('itemPrice').value,
             category: document.getElementById('itemCategory').value,
             img: imgUrl,
             video: videoUrl,
-            ingredients: ingredients,
-            benefits: benefits,
+            ingredients: document.getElementById('itemIngredients').value.split(',').map(s => s.trim()),
+            benefits: document.getElementById('itemBenefits').value.split(',').map(s => s.trim()),
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
 
+        status.innerText = "✅ تم بنجاح!";
         status.style.color = "green";
-        status.innerText = "✅ تم بنجاح! الطبق متاح الآن في المنيو.";
-        resetForm();
-
-    } catch (err) {
+        document.querySelectorAll('input, textarea').forEach(i => i.value = "");
+    } catch (e) {
+        status.innerText = "❌ خطأ: " + e.message;
         status.style.color = "red";
-        status.innerText = "❌ فشل الرفع: " + err.message;
-        console.error(err);
     } finally {
         btn.disabled = false;
     }
 }
-
-function resetForm() {
-    document.querySelectorAll('input, textarea').forEach(el => el.value = "");
-}
 </script>
-
 </body>
 </html>
