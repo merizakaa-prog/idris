@@ -3,26 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>منيو مطعمنا</title>
+    <title>منيو المطعم</title>
     <style>
         :root { --primary: #e67e22; --bg: #f8f9fa; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding-bottom: 30px; }
-        header { background: var(--primary); color: white; padding: 25px; text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        .menu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 20px; padding: 20px; max-width: 1200px; margin: auto; }
-        .card { background: white; border-radius: 15px; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.08); transition: 0.3s; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding-bottom: 50px; }
+        header { background: var(--primary); color: white; padding: 30px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        .menu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 25px; padding: 20px; max-width: 1100px; margin: auto; }
+        .card { background: white; border-radius: 15px; overflow: hidden; box-shadow: 0 6px 15px rgba(0,0,0,0.06); transition: 0.3s; text-align: center; }
         .card:hover { transform: translateY(-5px); }
-        .card img { width: 100%; height: 180px; object-fit: cover; background: #eee; }
-        .card-body { padding: 15px; text-align: center; }
-        .card-body h3 { margin: 10px 0; color: #2c3e50; }
-        .price { color: var(--primary); font-weight: bold; font-size: 1.3rem; }
-        #loader { text-align: center; padding: 50px; font-size: 1.2rem; color: #666; }
+        .card img { width: 100%; height: 200px; object-fit: cover; background: #f0f0f0; }
+        .card-body { padding: 15px; }
+        .card-body h3 { margin: 10px 0; color: #333; }
+        .price { color: var(--primary); font-weight: bold; font-size: 1.4rem; }
+        #loader { text-align: center; padding: 50px; font-size: 1.2rem; color: #888; }
     </style>
 </head>
 <body>
 
 <header>
-    <h1>🍕 منيو المطعم</h1>
-    <p>أشهى المأكولات بين يديك</p>
+    <h1>🍕 منيو مطعمنا الشهي</h1>
+    <p>اختر وجبتك المفضلة واطلب الآن</p>
 </header>
 
 <div id="loader">⏳ جاري تحميل المنيو...</div>
@@ -32,36 +32,29 @@
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
 <script>
-    const firebaseConfig = { 
-        databaseURL: "https://andr-default-rtdb.firebaseio.com/" 
-    };
-    
-    if (!firebase.apps.length) {
-        firebase.initializeApp(firebaseConfig);
-    }
+    const firebaseConfig = { databaseURL: "https://andr-default-rtdb.firebaseio.com/" };
+    if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
     const database = firebase.database();
 
-    function startApp() {
+    function loadMenu() {
         const menuGrid = document.getElementById('menuGrid');
         const loader = document.getElementById('loader');
 
-        // جلب البيانات لحظياً من Firebase
+        // جلب البيانات من Firebase وتحديثها لحظياً
         database.ref('menu').on('value', (snapshot) => {
             loader.style.display = "none";
             const data = snapshot.val();
             
             if (!data) {
-                menuGrid.innerHTML = "<h3>المطعم مغلق حالياً أو لا توجد وجبات.</h3>";
+                menuGrid.innerHTML = "<h3>نحن نحضر المنيو حالياً، ترقبونا!</h3>";
                 return;
             }
 
-            const items = Object.values(data);
-            // ترتيب الوجبات من الأحدث للأقدم
-            items.reverse(); 
+            const items = Object.values(data).reverse(); // عرض الأحدث أولاً
 
             menuGrid.innerHTML = items.map(item => `
                 <div class="card">
-                    <img src="${item.image}" loading="lazy">
+                    <img src="${item.image}" alt="${item.name}">
                     <div class="card-body">
                         <h3>${item.name}</h3>
                         <div class="price">${item.price} د.ج</div>
@@ -71,7 +64,7 @@
         });
     }
 
-    window.onload = startApp;
+    window.onload = loadMenu;
 </script>
 </body>
 </html>
