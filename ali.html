@@ -3,65 +3,72 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>منيو المطعم</title>
+    <title>لوحة التحكم | أضف وجبة</title>
     <style>
-        :root { --primary: #e67e22; --bg: #f8f9fa; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding-bottom: 50px; }
-        header { background: var(--primary); color: white; padding: 25px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        .menu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; padding: 20px; max-width: 1100px; margin: auto; }
-        .card { background: white; border-radius: 15px; overflow: hidden; box-shadow: 0 6px 15px rgba(0,0,0,0.06); transition: 0.3s; text-align: center; }
-        .card img { width: 100%; height: 200px; object-fit: cover; }
-        .card-body { padding: 15px; }
-        .price { color: var(--primary); font-weight: bold; font-size: 1.4rem; }
+        :root { --primary: #e67e22; --dark: #2c3e50; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; margin: 0; padding: 20px; display: flex; justify-content: center; }
+        .admin-box { background: white; width: 100%; max-width: 400px; padding: 25px; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); }
+        input, button { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #ccc; box-sizing: border-box; }
+        button { background: var(--primary); color: white; border: none; font-weight: bold; cursor: pointer; }
+        #status { text-align: center; font-weight: bold; margin-top: 10px; }
     </style>
 </head>
 <body>
 
-<header>
-    <h1>🍕 منيو مطعمنا</h1>
-    <p>الوجبات المتاحة حالياً</p>
-</header>
-
-<div id="menuGrid" class="menu-grid">
-    <p style="text-align: center; grid-column: 1/-1;">⏳ جاري تحميل المنيو...</p>
+<div class="admin-box">
+    <h2 style="text-align: center;">إضافة وجبة</h2>
+    <input type="text" id="name" placeholder="اسم الوجبة">
+    <input type="number" id="price" placeholder="السعر">
+    <input type="file" id="imageFile" accept="image/*">
+    <button onclick="uploadAndSave()">حفظ ونشر</button>
+    <p id="status"></p>
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
 <script>
-    // انتبه هنا: استبدل هذا الرابط بالرابط الذي وجدته في صفحة Firebase Data
-    const firebaseConfig = { 
-        databaseURL: "https://andr-eccef-default-rtdb.firebaseio.com/" 
-    };
-
-    if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
+    // الرابط الذي أكدت أنت أنه يعمل
+    const firebaseConfig = { databaseURL: "https://andr-eccef-default-rtdb.firebaseio.com/" };
+    firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
 
-    function loadItems() {
-        const menuGrid = document.getElementById('menuGrid');
-        
-        // جلب البيانات
-        database.ref('menu').on('value', (snapshot) => {
-            const data = snapshot.val();
-            if (!data) {
-                menuGrid.innerHTML = "<h3>لا توجد وجبات مضافة.</h3>";
-                return;
-            }
+    const cloudName = "dzrrirfig";
+    const uploadPreset = "restaurant_preset";
 
-            const items = Object.values(data).reverse();
-            menuGrid.innerHTML = items.map(item => `
-                <div class="card">
-                    <img src="${item.image}">
-                    <div class="card-body">
-                        <h3>${item.name}</h3>
-                        <div class="price">${item.price} د.ج</div>
-                    </div>
-                </div>
-            `).join('');
-        });
+    async function uploadAndSave() {
+        const name = document.getElementById('name').value;
+        const price = document.getElementById('price').value;
+        const file = document.getElementById('imageFile').files[0];
+        const status = document.getElementById('status');
+
+        if (!name || !price || !file) { alert("أكمل البيانات أولاً!"); return; }
+
+        status.innerText = "⏳ جاري الرفع...";
+        
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('upload_preset', uploadPreset);
+
+        try {
+            const resp = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+                method: 'POST', body: formData
+            });
+            const data = await resp.json();
+
+            if (data.secure_url) {
+                // إرسال البيانات إلى Firebase
+                await database.ref('menu').push({
+                    itemName: name,
+                    itemPrice: price,
+                    itemImage: data.secure_url
+                });
+                status.innerText = "✅ تم النشر بنجاح!";
+                document.getElementById('name').value = "";
+                document.getElementById('price').value = "";
+            } else { status.innerText = "❌ خطأ في Cloudinary"; }
+        } catch (e) { status.innerText = "❌ فشل الاتصال"; }
     }
-    window.onload = loadItems;
 </script>
 </body>
 </html>
