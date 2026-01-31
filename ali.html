@@ -3,41 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لوحة التحكم - إضافة وجبات</title>
+    <title>لوحة التحكم | andr-eccef</title>
     <style>
         :root { --primary: #e67e22; --dark: #2c3e50; }
         body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; margin: 0; padding: 20px; display: flex; justify-content: center; }
         .admin-card { background: white; width: 100%; max-width: 450px; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
         h2 { color: var(--dark); text-align: center; margin-bottom: 20px; }
         input, button { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; font-size: 1rem; }
-        button { background: var(--primary); color: white; border: none; font-weight: bold; cursor: pointer; transition: 0.3s; }
-        button:hover { background: #d35400; }
+        button { background: var(--primary); color: white; border: none; font-weight: bold; cursor: pointer; }
         #status { text-align: center; font-weight: bold; margin-top: 15px; }
-        .preview-img { width: 100%; height: 200px; object-fit: cover; border-radius: 8px; display: none; margin-top: 15px; border: 1px solid #eee; }
     </style>
 </head>
 <body>
 
 <div class="admin-card">
-    <h2>➕ إضافة وجبة للمنيو</h2>
-    <input type="text" id="itemName" placeholder="اسم الوجبة (مثلاً: بيتزا)">
-    <input type="number" id="itemPrice" placeholder="السعر (مثلاً: 1200 د.ج)">
+    <h2>➕ إضافة وجبة جديدة</h2>
+    <input type="text" id="itemName" placeholder="اسم الوجبة">
+    <input type="number" id="itemPrice" placeholder="السعر (د.ج)">
     <input type="file" id="imageInput" accept="image/*">
     <button onclick="addNewItem()">حفظ ونشر الوجبة</button>
     <p id="status"></p>
-    <img id="preview" class="preview-img">
 </div>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
 <script>
-    // إعدادات Firebase لمشروعك andr
-    const firebaseConfig = { databaseURL: "https://andr-default-rtdb.firebaseio.com/" };
+    // الرابط المصلح بناءً على ID مشروعك
+    const firebaseConfig = { 
+        databaseURL: "https://andr-eccef-default-rtdb.firebaseio.com/" 
+    };
+    
     if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
     const database = firebase.database();
 
-    // إعدادات Cloudinary المصلحة
     const cloudName = "dzrrirfig"; 
     const uploadPreset = "restaurant_preset"; 
 
@@ -46,11 +45,9 @@
         const price = document.getElementById('itemPrice').value;
         const fileInput = document.getElementById('imageInput');
         const status = document.getElementById('status');
-        const preview = document.getElementById('preview');
 
         if (!name || !price || !fileInput.files[0]) {
-            alert("يرجى إكمال جميع البيانات واختيار صورة");
-            return;
+            alert("يرجى ملء كافة الخانات"); return;
         }
 
         status.innerText = "⏳ جاري الرفع والنشر...";
@@ -61,40 +58,23 @@
         formData.append('upload_preset', uploadPreset);
 
         try {
-            // 1. الرفع إلى Cloudinary
             const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
-                method: 'POST',
-                body: formData
+                method: 'POST', body: formData
             });
-
             const data = await response.json();
 
             if (data.secure_url) {
-                // 2. الحفظ في Firebase
                 await database.ref('menu').push({
-                    name: name,
-                    price: price,
-                    image: data.secure_url,
-                    createdAt: Date.now()
+                    name: name, price: price, image: data.secure_url
                 });
-
-                status.innerText = "✅ تم بنجاح! الوجبة الآن في المنيو.";
+                status.innerText = "✅ تم النشر بنجاح!";
                 status.style.color = "green";
-                preview.src = data.secure_url;
-                preview.style.display = "block";
-
-                // تفريغ الخانات
                 document.getElementById('itemName').value = "";
                 document.getElementById('itemPrice').value = "";
-                fileInput.value = "";
             } else {
-                status.innerText = "❌ خطأ Cloudinary: " + (data.error ? data.error.message : "خطأ غير معروف");
-                status.style.color = "red";
+                status.innerText = "❌ خطأ في الرفع: " + data.error.message;
             }
-        } catch (error) {
-            status.innerText = "❌ فشل الاتصال بالإنترنت";
-            status.style.color = "red";
-        }
+        } catch (e) { status.innerText = "❌ فشل الاتصال"; }
     }
 </script>
 </body>
