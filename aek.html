@@ -3,68 +3,79 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>منيو المطعم</title>
+    <title>لوحة التحكم | andr-eccef</title>
     <style>
-        :root { --primary: #e67e22; --bg: #f8f9fa; }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg); margin: 0; padding-bottom: 50px; }
-        header { background: var(--primary); color: white; padding: 30px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        .menu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 25px; padding: 20px; max-width: 1100px; margin: auto; }
-        .card { background: white; border-radius: 15px; overflow: hidden; box-shadow: 0 6px 15px rgba(0,0,0,0.06); transition: 0.3s; text-align: center; }
-        .card:hover { transform: translateY(-5px); }
-        .card img { width: 100%; height: 200px; object-fit: cover; background: #f0f0f0; }
-        .card-body { padding: 15px; }
-        .card-body h3 { margin: 10px 0; color: #333; }
-        .price { color: var(--primary); font-weight: bold; font-size: 1.4rem; }
-        #loader { text-align: center; padding: 50px; font-size: 1.2rem; color: #888; }
+        :root { --primary: #e67e22; --dark: #2c3e50; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; margin: 0; padding: 20px; display: flex; justify-content: center; }
+        .admin-card { background: white; width: 100%; max-width: 450px; padding: 30px; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        h2 { color: var(--dark); text-align: center; margin-bottom: 20px; }
+        input, button { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #ddd; box-sizing: border-box; font-size: 1rem; }
+        button { background: var(--primary); color: white; border: none; font-weight: bold; cursor: pointer; }
+        #status { text-align: center; font-weight: bold; margin-top: 15px; }
     </style>
 </head>
 <body>
 
-<header>
-    <h1>🍕 منيو مطعمنا الشهي</h1>
-    <p>اختر وجبتك المفضلة واطلب الآن</p>
-</header>
-
-<div id="loader">⏳ جاري تحميل المنيو...</div>
-<div id="menuGrid" class="menu-grid"></div>
+<div class="admin-card">
+    <h2>➕ إضافة وجبة جديدة</h2>
+    <input type="text" id="itemName" placeholder="اسم الوجبة">
+    <input type="number" id="itemPrice" placeholder="السعر (د.ج)">
+    <input type="file" id="imageInput" accept="image/*">
+    <button onclick="addNewItem()">حفظ ونشر الوجبة</button>
+    <p id="status"></p>
+</div>
 
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
 <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
 
 <script>
-    const firebaseConfig = { databaseURL: "https://andr-default-rtdb.firebaseio.com/" };
+    // الرابط المصلح بناءً على ID مشروعك
+    const firebaseConfig = { 
+        databaseURL: "https://andr-eccef-default-rtdb.firebaseio.com/" 
+    };
+    
     if (!firebase.apps.length) { firebase.initializeApp(firebaseConfig); }
     const database = firebase.database();
 
-    function loadMenu() {
-        const menuGrid = document.getElementById('menuGrid');
-        const loader = document.getElementById('loader');
+    const cloudName = "dzrrirfig"; 
+    const uploadPreset = "restaurant_preset"; 
 
-        // جلب البيانات من Firebase وتحديثها لحظياً
-        database.ref('menu').on('value', (snapshot) => {
-            loader.style.display = "none";
-            const data = snapshot.val();
-            
-            if (!data) {
-                menuGrid.innerHTML = "<h3>نحن نحضر المنيو حالياً، ترقبونا!</h3>";
-                return;
+    async function addNewItem() {
+        const name = document.getElementById('itemName').value;
+        const price = document.getElementById('itemPrice').value;
+        const fileInput = document.getElementById('imageInput');
+        const status = document.getElementById('status');
+
+        if (!name || !price || !fileInput.files[0]) {
+            alert("يرجى ملء كافة الخانات"); return;
+        }
+
+        status.innerText = "⏳ جاري الرفع والنشر...";
+        status.style.color = "orange";
+
+        const formData = new FormData();
+        formData.append('file', fileInput.files[0]);
+        formData.append('upload_preset', uploadPreset);
+
+        try {
+            const response = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+                method: 'POST', body: formData
+            });
+            const data = await response.json();
+
+            if (data.secure_url) {
+                await database.ref('menu').push({
+                    name: name, price: price, image: data.secure_url
+                });
+                status.innerText = "✅ تم النشر بنجاح!";
+                status.style.color = "green";
+                document.getElementById('itemName').value = "";
+                document.getElementById('itemPrice').value = "";
+            } else {
+                status.innerText = "❌ خطأ في الرفع: " + data.error.message;
             }
-
-            const items = Object.values(data).reverse(); // عرض الأحدث أولاً
-
-            menuGrid.innerHTML = items.map(item => `
-                <div class="card">
-                    <img src="${item.image}" alt="${item.name}">
-                    <div class="card-body">
-                        <h3>${item.name}</h3>
-                        <div class="price">${item.price} د.ج</div>
-                    </div>
-                </div>
-            `).join('');
-        });
+        } catch (e) { status.innerText = "❌ فشل الاتصال"; }
     }
-
-    window.onload = loadMenu;
 </script>
 </body>
 </html>
