@@ -3,72 +3,119 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لوحة التحكم | أضف وجبة</title>
+    <title>لوحة تحكم القائمة الذكية</title>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    
     <style>
-        :root { --primary: #e67e22; --dark: #2c3e50; }
-        body { font-family: 'Segoe UI', sans-serif; background: #f4f7f6; margin: 0; padding: 20px; display: flex; justify-content: center; }
-        .admin-box { background: white; width: 100%; max-width: 400px; padding: 25px; border-radius: 15px; box-shadow: 0 5px 20px rgba(0,0,0,0.1); }
-        input, button { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #ccc; box-sizing: border-box; }
-        button { background: var(--primary); color: white; border: none; font-weight: bold; cursor: pointer; }
-        #status { text-align: center; font-weight: bold; margin-top: 10px; }
+        :root { --main: #8b0000; --secondary: #2ecc71; }
+        body { font-family: 'Tahoma', sans-serif; background: #f4f4f4; padding: 20px; direction: rtl; }
+        .admin-container { max-width: 600px; margin: auto; background: #fff; padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        h2 { text-align: center; color: var(--main); }
+        label { display: block; margin-top: 15px; font-weight: bold; font-size: 14px; }
+        input, select, textarea { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; }
+        .btn-group { display: flex; gap: 10px; margin-top: 20px; }
+        button { flex: 1; padding: 15px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        .btn-add { background: var(--secondary); color: white; }
+        .btn-add:hover { background: #27ae60; }
+        #status { text-align: center; margin-top: 15px; font-weight: bold; }
+        .info-msg { font-size: 12px; color: #666; margin-top: 2px; }
     </style>
 </head>
 <body>
 
-<div class="admin-box">
-    <h2 style="text-align: center;">إضافة وجبة</h2>
-    <input type="text" id="name" placeholder="اسم الوجبة">
-    <input type="number" id="price" placeholder="السعر">
-    <input type="file" id="imageFile" accept="image/*">
-    <button onclick="uploadAndSave()">حفظ ونشر</button>
+<div class="admin-container">
+    <h2>➕ إضافة طبق جديد للقائمة</h2>
+    
+    <label>القسم (Category):</label>
+    <select id="itemCategory">
+        <option value="طعام">طعام 🍽️</option>
+        <option value="مشروبات">مشروبات 🥤</option>
+        <option value="تحلية">تحلية 🍰</option>
+        <option value="قاطو">قاطو 🍪</option>
+    </select>
+
+    <label>اسم الطبق:</label>
+    <input type="text" id="itemName" placeholder="مثلاً: بيتزا مارغريتا">
+
+    <label>السعر (دج):</label>
+    <input type="number" id="itemPrice" placeholder="مثلاً: 1200">
+
+    <label>رابط الصورة (URL):</label>
+    <input type="text" id="itemImg" placeholder="رابط الصورة من Cloudinary أو غيره">
+
+    <label>رابط الفيديو (URL):</label>
+    <input type="text" id="itemVideo" placeholder="رابط فيديو قصير (اختياري)">
+
+    <label>المكونات (افصل بينها بفاصلة):</label>
+    <textarea id="itemIngredients" placeholder="طماطم, جبن, زيتون..."></textarea>
+
+    <label>الفوائد (افصل بينها بفاصلة):</label>
+    <textarea id="itemBenefits" placeholder="غني بالبروتين, طاقة فورية..."></textarea>
+
+    <div class="btn-group">
+        <button class="btn-add" onclick="saveToFirestore()">حفظ ونشر الطبق ✅</button>
+    </div>
+
     <p id="status"></p>
 </div>
 
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-
 <script>
-    // الرابط الذي أكدت أنت أنه يعمل
-    const firebaseConfig = { databaseURL: "https://andr-eccef-default-rtdb.firebaseio.com/" };
-    firebase.initializeApp(firebaseConfig);
-    const database = firebase.database();
+// --- يجب أن تكون نفس إعدادات صفحة المنيو تماماً ---
+const firebaseConfig = {
+    apiKey: "YOUR_API_KEY", // ضعي مفتاحك هنا
+    authDomain: "restaurant-e323a.firebaseapp.com",
+    projectId: "restaurant-e323a",
+    storageBucket: "restaurant-e323a.appspot.com",
+    messagingSenderId: "309092455734",
+    appId: "YOUR_APP_ID"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
 
-    const cloudName = "dzrrirfig";
-    const uploadPreset = "restaurant_preset";
+function saveToFirestore() {
+    const status = document.getElementById('status');
+    const name = document.getElementById('itemName').value;
+    const price = document.getElementById('itemPrice').value;
+    const category = document.getElementById('itemCategory').value;
+    const img = document.getElementById('itemImg').value;
+    const video = document.getElementById('itemVideo').value;
+    
+    // تحويل النص إلى مصفوفة (Array) كما يتوقع كود المنيو
+    const ingredients = document.getElementById('itemIngredients').value.split(',').map(s => s.trim());
+    const benefits = document.getElementById('itemBenefits').value.split(',').map(s => s.trim());
 
-    async function uploadAndSave() {
-        const name = document.getElementById('name').value;
-        const price = document.getElementById('price').value;
-        const file = document.getElementById('imageFile').files[0];
-        const status = document.getElementById('status');
-
-        if (!name || !price || !file) { alert("أكمل البيانات أولاً!"); return; }
-
-        status.innerText = "⏳ جاري الرفع...";
-        
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('upload_preset', uploadPreset);
-
-        try {
-            const resp = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
-                method: 'POST', body: formData
-            });
-            const data = await resp.json();
-
-            if (data.secure_url) {
-                // إرسال البيانات إلى Firebase
-                await database.ref('menu').push({
-                    itemName: name,
-                    itemPrice: price,
-                    itemImage: data.secure_url
-                });
-                status.innerText = "✅ تم النشر بنجاح!";
-                document.getElementById('name').value = "";
-                document.getElementById('price').value = "";
-            } else { status.innerText = "❌ خطأ في Cloudinary"; }
-        } catch (e) { status.innerText = "❌ فشل الاتصال"; }
+    if(!name || !price || !img) {
+        alert("يرجى ملء الاسم والسعر والصورة على الأقل!");
+        return;
     }
+
+    status.innerText = "⏳ جاري الحفظ...";
+    status.style.color = "orange";
+
+    // الإضافة إلى مجموعة "products" لأن المنيو يقرأ منها
+    db.collection("products").add({
+        name: name,
+        price: price,
+        category: category,
+        img: img,
+        video: video,
+        ingredients: ingredients,
+        benefits: benefits,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    })
+    .then(() => {
+        status.innerText = "✅ تم إضافة " + name + " بنجاح!";
+        status.style.color = "green";
+        // تصفير الحقول
+        document.querySelectorAll('input, textarea').forEach(el => el.value = "");
+    })
+    .catch(err => {
+        status.innerText = "❌ خطأ: " + err.message;
+        status.style.color = "red";
+    });
+}
 </script>
+
 </body>
 </html>
