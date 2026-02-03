@@ -3,22 +3,51 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>منيو المطعم الذكي</title>
+    <title>منيو المطعم الذكي - المزامنة الحية</title>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    
     <style>
-        :root { --main: #8b0000; }
-        body { margin:0; font-family: sans-serif; background: #f4f4f4; }
-        .category-bar { display:flex; overflow-x: auto; padding:15px; background:#fff; gap:10px; position:sticky; top:0; z-index:100; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        .cat { min-width:80px; padding:10px; background:#eee; border-radius:12px; text-align:center; cursor:pointer; font-weight:bold; }
-        .cat.active { background: var(--main); color: #white; color:white; }
+        :root { --main: #8b0000; --bg: #f8f9fa; }
+        body { margin:0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); }
+        
+        /* شريط الأقسام */
+        .category-bar { 
+            display:flex; overflow-x: auto; padding:15px; background:#fff; 
+            gap:10px; position:sticky; top:0; z-index:100; box-shadow: 0 2px 10px rgba(0,0,0,0.1); 
+        }
+        .cat { 
+            min-width:90px; padding:10px 20px; background:#eee; border-radius:50px; 
+            text-align:center; cursor:pointer; font-weight:bold; transition: 0.3s;
+        }
+        .cat.active { background: var(--main); color: white; }
+
+        /* شبكة الأطباق */
         .grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap:15px; padding:20px; }
-        .card { background:#fff; border-radius:15px; padding:10px; text-align:center; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-        .card img { width:100%; height:120px; object-fit: cover; border-radius:10px; }
-        .modal { position:fixed; inset:0; background:rgba(0,0,0,0.8); display:none; justify-content:center; align-items:center; z-index:1000; }
+        .card { 
+            background:#fff; border-radius:15px; padding:10px; text-align:center; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05); transition: 0.3s; cursor: pointer;
+        }
+        .card:hover { transform: translateY(-5px); }
+        .card img { width:100%; height:130px; object-fit: cover; border-radius:12px; }
+        .card h3 { margin: 10px 0 5px; font-size: 16px; color: #333; }
+        .card p { color: var(--main); font-weight: bold; margin: 0; }
+
+        /* النافذة المنبثقة (Modal) */
+        .modal { 
+            position:fixed; inset:0; background:rgba(0,0,0,0.85); 
+            display:none; justify-content:center; align-items:center; z-index:1000; padding: 20px;
+        }
         .modal.show { display:flex; }
-        .modal-content { background:#fff; width:90%; max-width:400px; padding:20px; border-radius:20px; max-height:80vh; overflow-y:auto; }
-        video { width:100%; border-radius:10px; margin-bottom:10px; }
+        .modal-content { 
+            background:#fff; width:100%; max-width:450px; padding:25px; 
+            border-radius:25px; max-height:90vh; overflow-y:auto; position: relative;
+        }
+        video { width:100%; border-radius:15px; margin-bottom:15px; background: #000; }
+        .close-btn { 
+            width:100%; padding:12px; margin-top:20px; border-radius:12px; 
+            border:none; background:#f0f0f0; font-weight:bold; cursor:pointer;
+        }
     </style>
 </head>
 <body>
@@ -35,65 +64,106 @@
 <div class="modal" id="itemModal">
     <div class="modal-content">
         <video id="mVideo" controls></video>
-        <h2 id="mTitle" style="color:var(--main)"></h2>
-        <p id="mPrice" style="font-weight:bold"></p>
-        <div id="mDetails" style="text-align:right; font-size:14px"></div>
-        <button onclick="closeModal()" style="width:100%; padding:10px; margin-top:15px; border-radius:10px; border:none; background:#eee;">إغلاق</button>
+        <h2 id="mTitle" style="color:var(--main); margin-top:0;"></h2>
+        <p id="mPrice" style="font-size:1.2rem; margin-bottom:10px;"></p>
+        <hr>
+        <div id="mDetails" style="text-align:right; line-height:1.6;"></div>
+        <button class="close-btn" onclick="closeModal()">إغلاق التقرير</button>
     </div>
 </div>
 
 <script>
+// إعدادات Firebase الخاصة بك
 const firebaseConfig = {
     authDomain: "restaurant-e323a.firebaseapp.com",
     projectId: "restaurant-e323a",
     storageBucket: "restaurant-e323a.appspot.com",
     messagingSenderId: "309092455734"
 };
+
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
-function loadCategory(cat, el) {
+let currentUnsubscribe = null;
+
+function loadCategory(catName, element) {
+    // تحديث شكل الأزرار
     document.querySelectorAll('.cat').forEach(c => c.classList.remove('active'));
-    el.classList.add('active');
+    element.classList.add('active');
     
     const grid = document.getElementById('menuGrid');
-    grid.innerHTML = "جاري التحميل...";
+    grid.innerHTML = "<p style='text-align:center; width:100%;'>جاري مزامنة الأطباق...</p>";
 
-    db.collection("products").where("category", "==", cat).get().then(snap => {
-        grid.innerHTML = "";
-        snap.forEach(doc => {
-            const d = doc.data();
-            grid.innerHTML += `
-                <div class="card" onclick='openModal(${JSON.stringify(d)})'>
-                    <img src="${d.img}">
-                    <h3>${d.name}</h3>
-                    <p style="color:var(--main); font-weight:bold">${d.price} دج</p>
-                </div>`;
+    // إلغاء المستمع السابق لتوفير الموارد
+    if (currentUnsubscribe) currentUnsubscribe();
+
+    // استخدام onSnapshot للمزامنة الحية الفورية مع الهاتف
+    currentUnsubscribe = db.collection("products")
+        .where("category", "==", catName)
+        .onSnapshot((snapshot) => {
+            grid.innerHTML = "";
+            if (snapshot.empty) {
+                grid.innerHTML = "<p style='grid-column: 1/-1;'>لا توجد أطباق في هذا القسم حالياً.</p>";
+                return;
+            }
+            
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                const itemHtml = `
+                    <div class="card" onclick='openModal(${JSON.stringify(data)})'>
+                        <img src="${data.img || 'https://via.placeholder.com/150'}">
+                        <h3>${data.name || 'طبق بدون اسم'}</h3>
+                        <p>${data.price || '0'} دج</p>
+                    </div>`;
+                grid.innerHTML += itemHtml;
+            });
+        }, (error) => {
+            console.error("خطأ في المزامنة:", error);
+            grid.innerHTML = "حدث خطأ أثناء تحميل البيانات.";
         });
-    });
 }
 
-function openModal(d) {
-    document.getElementById('itemModal').classList.add('show');
-    document.getElementById('mTitle').innerText = d.name;
-    document.getElementById('mPrice').innerText = d.price + " دج";
+function openModal(item) {
+    const modal = document.getElementById('itemModal');
+    const video = document.getElementById('mVideo');
     
-    const v = document.getElementById('mVideo');
-    if(d.video) { v.src = d.video; v.style.display = "block"; } 
-    else { v.style.display = "none"; }
+    document.getElementById('mTitle').innerText = item.name;
+    document.getElementById('mPrice').innerText = "السعر: " + item.price + " دج";
+    
+    // معالجة الفيديو
+    if (item.video) {
+        video.src = item.video;
+        video.style.display = "block";
+    } else {
+        video.style.display = "none";
+    }
+
+    // معالجة المكونات والفوائد (حماية في حال كانت مفقودة)
+    let ingredients = Array.isArray(item.ingredients) ? item.ingredients.join(' ، ') : "غير متوفرة حالياً";
+    let benefits = Array.isArray(item.benefits) ? item.benefits.join(' ، ') : "غير متوفرة حالياً";
 
     document.getElementById('mDetails').innerHTML = `
-        <b>المكونات:</b> <p>${d.ingredients.join(', ')}</p>
-        <b>الفوائد:</b> <p>${d.benefits.join(', ')}</p>
+        <p><b>🥗 المكونات:</b>< br>${ingredients}</p>
+        <p><b>✨ الفوائد:</b><br>${benefits}</p>
     `;
+    
+    modal.classList.add('show');
 }
 
-function closeModal() { 
-    document.getElementById('itemModal').classList.remove('show'); 
-    document.getElementById('mVideo').pause();
+function closeModal() {
+    const modal = document.getElementById('itemModal');
+    const video = document.getElementById('mVideo');
+    modal.classList.remove('show');
+    video.pause();
+    video.src = ""; // تفريغ المصدر لإيقاف التحميل
 }
 
-window.onload = () => loadCategory('طعام', document.querySelector('.cat'));
+// تحميل الفئة الأولى عند التشغيل
+window.onload = () => {
+    const firstCat = document.querySelector('.cat');
+    if(firstCat) loadCategory('طعام', firstCat);
+};
 </script>
+
 </body>
 </html>
