@@ -9,66 +9,111 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <style>
         :root { --main: #8b0000; }
-        body { margin:0; font-family: sans-serif; background: #f8f9fa; direction: rtl; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; padding: 15px; }
-        .card { background: #fff; border-radius: 15px; padding: 10px; text-align: center; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
-        .card img { width: 100%; border-radius: 10px; height: 120px; object-fit: cover; }
+        body { margin:0; font-family: 'Segoe UI', sans-serif; background: #f8f9fa; direction: rtl; }
+        .header { background: #fff; padding: 20px; text-align: center; border-bottom: 2px solid var(--main); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         
-        /* تصميم السلة */
-        .cart-panel { position: fixed; bottom: -100%; left: 0; width: 100%; height: 80vh; background: #fff; transition: 0.5s; z-index: 1000; border-radius: 25px 25px 0 0; padding: 20px; display: flex; flex-direction: column; box-shadow: 0 -5px 20px rgba(0,0,0,0.2); }
+        /* شبكة الأطباق */
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 15px; padding: 20px; margin-bottom: 100px; }
+        .card { background: #fff; border-radius: 15px; padding: 10px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.05); cursor: pointer; transition: 0.3s; }
+        .card:active { transform: scale(0.95); }
+        .card img { width: 100%; border-radius: 12px; height: 130px; object-fit: cover; background: #eee; }
+        .card h4 { margin: 10px 0 5px; font-size: 16px; }
+        .card p { color: var(--main); font-weight: bold; margin: 0; }
+        
+        /* السلة */
+        .cart-panel { position: fixed; bottom: -100%; left: 0; width: 100%; height: 85vh; background: #fff; transition: 0.5s cubic-bezier(0.4, 0, 0.2, 1); z-index: 1000; border-radius: 30px 30px 0 0; padding: 20px; display: flex; flex-direction: column; box-shadow: 0 -10px 30px rgba(0,0,0,0.2); box-sizing: border-box; }
         .cart-panel.show { bottom: 0; }
-        .cart-item { background: #fdfdfd; border: 1px solid #eee; border-radius: 15px; padding: 12px; margin-bottom: 10px; }
-        .details-badge { font-size: 11px; color: #666; background: #f1f1f1; padding: 8px; border-radius: 8px; margin-top: 8px; border-right: 3px solid var(--main); }
+        #cartList { flex: 1; overflow-y: auto; margin: 15px 0; }
+        .cart-item { background: #fdfdfd; border: 1px solid #eee; border-radius: 15px; padding: 15px; margin-bottom: 12px; position: relative; }
+        .details-badge { font-size: 12px; color: #666; background: #f1f1f1; padding: 10px; border-radius: 10px; margin-top: 10px; border-right: 4px solid var(--main); line-height: 1.5; }
         
-        .float-btn { position: fixed; bottom: 20px; left: 20px; right: 20px; background: var(--main); color: #fff; padding: 15px; border-radius: 15px; border: none; font-weight: bold; display: flex; justify-content: space-between; }
+        /* الأزرار */
+        .float-btn { position: fixed; bottom: 20px; left: 20px; right: 20px; background: var(--main); color: #fff; padding: 18px; border-radius: 20px; border: none; font-weight: bold; display: flex; justify-content: space-between; font-size: 16px; box-shadow: 0 5px 15px rgba(139, 0, 0, 0.4); z-index: 500; }
+        .btn-send { width: 100%; padding: 18px; background: var(--main); color: #fff; border: none; border-radius: 15px; font-weight: bold; font-size: 16px; cursor: pointer; }
     </style>
 </head>
 <body>
 
-<div id="grid" class="grid"></div>
+<div class="header">
+    <h2 style="margin:0; color:var(--main)">Sweet & Salt Menu</h2>
+    <small>طاولة رقم 1</small>
+</div>
+
+<div id="grid" class="grid">
+    <p style="text-align:center; grid-column: 1/-1;">جاري جلب الأطباق من قائمة dishes...</p>
+</div>
 
 <div class="cart-panel" id="cartPanel">
-    <h3>🛒 طلبياتي</h3>
-    <div id="cartList" style="flex:1; overflow-y:auto;"></div>
-    <div id="totalArea" style="padding-top:10px; border-top:1px solid #eee;">
-        <h4>المجموع: <span id="cartTotal">0</span> دج</h4>
-        <button onclick="sendOrder()" style="width:100%; padding:15px; background:var(--main); color:#fff; border:none; border-radius:10px;">إرسال للمطبخ</button>
-        <button onclick="toggleCart()" style="width:100%; margin-top:5px; background:none; border:none; color:#999;">إغلاق</button>
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h2 style="margin:0">🛒 طلبياتي</h2>
+        <i class="fa-solid fa-circle-xmark" onclick="toggleCart()" style="font-size: 30px; color:#ddd; cursor:pointer;"></i>
+    </div>
+    
+    <div id="cartList"></div>
+    
+    <div style="padding-top:15px; border-top:1px solid #eee;">
+        <div style="display:flex; justify-content:space-between; font-size: 20px; font-weight: bold; margin-bottom: 20px;">
+            <span>الإجمالي:</span>
+            <span><span id="cartTotal">0</span> دج</span>
+        </div>
+        <button id="sendBtn" class="btn-send" onclick="sendOrder()">📤 إرسال الطلب للمطبخ</button>
     </div>
 </div>
 
 <button class="float-btn" onclick="toggleCart()">
-    <span>السلة (<span id="cartCount">0</span>)</span>
+    <span><i class="fa-solid fa-basket-shopping"></i> السلة (<span id="cartCount">0</span>)</span>
     <span id="floatTotal">0 دج</span>
 </button>
 
 <script>
-const firebaseConfig = { /* ... نفس الإعدادات ... */ };
+// ضع إعدادات Firebase الخاصة بك هنا
+const firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "restaurant-e323a.firebaseapp.com",
+    projectId: "restaurant-e323a",
+    storageBucket: "restaurant-e323a.appspot.com",
+    messagingSenderId: "309092455734",
+    appId: "YOUR_APP_ID"
+};
+
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
 let cart = [];
 
+// جلب الأطباق من مجموعة dishes
 function fetchMenu() {
-    db.collection("dishes").get().then(snap => {
+    db.collection("dishes").onSnapshot(snap => {
         const grid = document.getElementById('grid');
         grid.innerHTML = "";
+        
+        if (snap.empty) {
+            grid.innerHTML = "<p style='grid-column:1/-1; text-align:center;'>لا توجد أطباق في مجموعة dishes حالياً.</p>";
+            return;
+        }
+
         snap.forEach(doc => {
             const d = doc.data();
+            const itemJSON = JSON.stringify(d).replace(/'/g, "&apos;"); // حماية البيانات عند التحويل
+            
             grid.innerHTML += `
-                <div class="card" onclick='addToCart(${JSON.stringify(d)})'>
-                    <img src="${d.img}">
+                <div class="card" onclick='addToCart(${itemJSON})'>
+                    <img src="${d.img || 'https://via.placeholder.com/150'}" onerror="this.src='https://via.placeholder.com/150'">
                     <h4>${d.name}</h4>
                     <p>${d.price} دج</p>
                 </div>`;
         });
+    }, error => {
+        console.error("خطأ في الجلب:", error);
+        document.getElementById('grid').innerHTML = "فشل التحميل. تأكد من إعدادات Firebase واسم المجموعة.";
     });
 }
 
 function addToCart(item) {
     cart.push(item);
     renderCart();
-    alert("تمت الإضافة: " + item.name);
+    // تنبيه بسيط بدلاً من Alert المزعج
+    console.log("تمت إضافة " + item.name);
 }
 
 function renderCart() {
@@ -78,19 +123,21 @@ function renderCart() {
     
     cart.forEach((item, idx) => {
         total += parseInt(item.price);
-        // عرض المكونات والفوائد
-        const ing = item.ingredients && item.ingredients.length > 0 ? item.ingredients.join('، ') : "غير محدد";
-        const ben = item.benefits && item.benefits.length > 0 ? item.benefits.join('، ') : "غير محدد";
+        
+        // معالجة المصفوفات لضمان العرض
+        const ing = Array.isArray(item.ingredients) ? item.ingredients.join('، ') : (item.ingredients || "غير متوفر");
+        const ben = Array.isArray(item.benefits) ? item.benefits.join('، ') : (item.benefits || "غير متوفر");
 
         list.innerHTML += `
             <div class="cart-item">
-                <div style="display:flex; justify-content:space-between;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
                     <b>${item.name}</b>
-                    <span>${item.price} دج</span>
+                    <span style="color:var(--main); font-weight:bold;">${item.price} دج</span>
+                    <i class="fa-solid fa-trash" style="color:#ff4757; cursor:pointer;" onclick="removeItem(${idx})"></i>
                 </div>
                 <div class="details-badge">
-                    <b>المكونات:</b> ${ing}<br>
-                    <b>الفوائد:</b> ${ben}
+                    <div><b>🧾 المكونات:</b> ${ing}</div>
+                    <div style="margin-top:5px;"><b>💪 الفوائد:</b> ${ben}</div>
                 </div>
             </div>`;
     });
@@ -100,10 +147,22 @@ function renderCart() {
     document.getElementById('floatTotal').innerText = total + " دج";
 }
 
-function toggleCart() { document.getElementById('cartPanel').classList.toggle('show'); }
+function removeItem(idx) {
+    cart.splice(idx, 1);
+    renderCart();
+}
+
+function toggleCart() { 
+    document.getElementById('cartPanel').classList.toggle('show'); 
+}
 
 function sendOrder() {
-    if(cart.length === 0) return;
+    if(cart.length === 0) return alert("السلة فارغة!");
+    
+    const btn = document.getElementById('sendBtn');
+    btn.disabled = true;
+    btn.innerText = "جاري الإرسال...";
+
     db.collection("menu").add({
         tableNumber: 1,
         items: cart,
@@ -111,14 +170,20 @@ function sendOrder() {
         status: "جديد",
         timestamp: firebase.firestore.FieldValue.serverTimestamp()
     }).then(() => {
-        alert("تم إرسال الطلب!");
+        alert("✅ تم إرسال الطلب بنجاح للطاولة رقم 1");
         cart = [];
         renderCart();
         toggleCart();
+        btn.disabled = false;
+        btn.innerText = "📤 إرسال الطلب للمطبخ";
+    }).catch(err => {
+        alert("خطأ أثناء الإرسال: " + err.message);
+        btn.disabled = false;
     });
 }
 
-fetchMenu();
+// البدء عند تحميل الصفحة
+window.onload = fetchMenu;
 </script>
 </body>
 </html>
