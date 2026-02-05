@@ -10,39 +10,85 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     
     <style>
-        :root { --primary: #8b0000; --bg: #f8f9fa; --dark: #1a1a1a; }
-        body { margin:0; font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); direction: rtl; text-align: right; }
-        .header { padding: 25px; background: white; text-align: center; border-bottom: 3px solid var(--primary); }
-        .header h1 { margin: 0; color: var(--primary); }
-        .category-bar { display: flex; overflow-x: auto; padding: 15px; background: white; gap: 10px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
-        .cat { min-width: 80px; padding: 10px; background: white; border-radius: 12px; display: flex; flex-direction: column; align-items: center; cursor: pointer; border: 1px solid #eee; }
-        .cat.active { background: var(--primary); color: white; }
+        :root { 
+            --main-color: #8b0000; 
+            --bg-gray: #f8f9fa; 
+            --text-dark: #2d3436;
+            --shadow: 0 10px 30px rgba(0,0,0,0.08);
+        }
+
+        body { 
+            margin:0; font-family: 'Segoe UI', Tahoma, sans-serif; 
+            background: var(--bg-gray); color: var(--text-dark); 
+            direction: rtl; text-align: right;
+        }
+
+        /* الهيدر مع رقم الطاولة */
+        .header {
+            padding: 20px; background: white; text-align: center;
+            border-bottom: 3px solid var(--main-color);
+        }
+        .table-no { background: var(--main-color); color: white; padding: 5px 15px; border-radius: 20px; font-size: 14px; }
+
+        /* شريط الأصناف */
+        .category-bar {
+            display: flex; overflow-x: auto; padding: 15px;
+            background: #ffffff; gap: 12px; position: sticky; top: 0;
+            z-index: 100; box-shadow: var(--shadow);
+        }
+        .category-bar::-webkit-scrollbar { display: none; }
+
+        .cat {
+            min-width: 85px; padding: 10px; background: #fff; border-radius: 15px;
+            display: flex; flex-direction: column; align-items: center;
+            cursor: pointer; border: 1px solid #f1f1f1; flex-shrink: 0; transition: 0.3s;
+        }
+        .cat.active { background: var(--main-color); color: white; transform: scale(1.05); }
+
+        /* شبكة المنتجات */
         .container { padding: 15px; margin-bottom: 100px; }
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; }
-        .card { background: white; border-radius: 15px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-        .card img { width: 100%; height: 130px; object-fit: cover; }
-        .card-info { padding: 10px; text-align: center; }
-        .cart-floating { position: fixed; bottom: 20px; left: 15px; right: 15px; background: var(--dark); color: white; height: 60px; border-radius: 15px; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; z-index: 500; }
-        .cart-panel { position: fixed; bottom: -100%; left: 0; width: 100%; height: 80vh; background: white; border-radius: 25px 25px 0 0; padding: 20px; transition: 0.5s; z-index: 1000; display: flex; flex-direction: column; }
+        .card { background: #fff; border-radius: 20px; padding: 10px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.03); cursor: pointer; }
+        .card img { width: 100%; height: 130px; object-fit: cover; border-radius: 15px; }
+        .card h3 { font-size: 15px; margin: 10px 0; }
+        .card p { color: var(--main-color); font-weight: bold; }
+
+        /* سلة المشتريات (تعديل التمرير والوضوح) */
+        .cart-panel {
+            position: fixed; bottom: -100%; left: 0; width: 100%; height: 85vh;
+            background: #fff; box-shadow: 0 -10px 30px rgba(0,0,0,0.1);
+            padding: 20px; transition: 0.5s; z-index: 1000;
+            display: flex; flex-direction: column; border-radius: 30px 30px 0 0;
+        }
         .cart-panel.show { bottom: 0; }
-        #cartList { flex: 1; overflow-y: auto; margin: 15px 0; }
-        .cart-item { display: flex; align-items: center; padding: 12px; background: #f9f9f9; border-radius: 15px; margin-bottom: 8px; }
+
+        #cartList { flex: 1; overflow-y: auto; margin: 15px 0; padding: 0 5px; }
+
+        /* تصميم عنصر السلة - يحل مشكلة اختفاء الحروف */
+        .cart-item {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 15px; background: #f9f9f9; border-radius: 15px; margin-bottom: 10px;
+        }
         .cart-item-info { flex: 1; text-align: right; padding-right: 15px; }
-        .remove-btn { color: #ff4d4d; padding: 5px; cursor: pointer; }
-        .btn-send { width: 100%; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 12px; font-size: 18px; font-weight: bold; }
-        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: none; justify-content: center; align-items: flex-end; z-index: 2000; }
+        .cart-item-info h4 { margin: 0; font-size: 15px; white-space: normal; word-wrap: break-word; }
+
+        .btn-main { width: 100%; padding: 15px; border-radius: 15px; border: none; font-weight: bold; cursor: pointer; }
+        .cart-btn-float { position: fixed; bottom: 20px; left: 20px; right: 20px; background: var(--main-color); color: white; padding: 15px; border-radius: 20px; display: flex; justify-content: space-between; z-index: 500; border: none; font-weight: bold; box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
+
+        /* المودال */
+        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: none; justify-content: center; align-items: flex-end; z-index: 2000; }
         .modal.show { display: flex; }
-        .modal-box { background: white; width: 100%; max-width: 500px; border-radius: 25px 25px 0 0; padding: 20px; }
+        .modal-box { background: #fff; width: 100%; max-width: 500px; border-radius: 30px 30px 0 0; padding: 25px; max-height: 85vh; overflow-y: auto; }
     </style>
 </head>
 <body>
 
 <div class="header">
-    <h1>SWEET & SALT</h1>
-    <div style="font-size: 12px; color: #666;">الطاولة رقم 1</div>
+    <h1 style="margin:0; font-size: 22px; color: var(--main-color);">SWEET & SALT</h1>
+    <span class="table-no">الطاولة رقم 1</span>
 </div>
 
-<div class="category-bar" id="catBar">
+<div class="category-bar">
     <div class="cat active" onclick="fetchMenu('طعام', this)"><span>طعام</span></div>
     <div class="cat" onclick="fetchMenu('مشروبات', this)"><span>مشروبات</span></div>
     <div class="cat" onclick="fetchMenu('تحلية', this)"><span>تحلية</span></div>
@@ -55,36 +101,38 @@
 
 <div class="modal" id="modal" onclick="if(event.target==this) closeModal()">
     <div class="modal-box">
-        <video id="video" controls style="width:100%; border-radius:15px;"></video>
-        <h2 id="title" style="margin:10px 0; color:var(--primary);"></h2>
-        <p id="modalPrice" style="font-weight:bold;"></p>
-        <button id="actionBtn" onclick="toggleCartItem()" style="width:100%; padding:15px; border:none; border-radius:12px; color:white; font-weight:bold;"></button>
-        <button onclick="closeModal()" style="width:100%; background:none; border:none; margin-top:10px; color:#999;">إغلاق</button>
+        <video id="video" controls style="width:100%; border-radius:20px;"></video>
+        <h2 id="title" style="margin-top:15px; color: var(--main-color);"></h2>
+        <p id="modalPrice" style="font-size: 18px; font-weight: bold;"></p>
+        <button id="actionBtn" class="btn-main" onclick="toggleCartItem()" style="color: white; margin-top: 15px;"></button>
+        <button class="btn-main" style="background:#f1f1f1; margin-top:10px; color:#555;" onclick="closeModal()">إغلاق</button>
     </div>
 </div>
 
-<div class="cart-floating" onclick="toggleCartPanel()">
-    <span>الطلبات (<span id="cartCount">0</span>)</span>
+<button class="cart-btn-float" onclick="toggleCartPanel()">
+    <span><i class="fa-solid fa-basket-shopping"></i> سلة الطلبات (<span id="cartCount">0</span>)</span>
     <span id="cartTotalDisplay">0 دج</span>
-</div>
+</button>
 
 <div class="cart-panel" id="cartPanel">
-    <div style="display:flex; justify-content:space-between;">
-        <h2>🛒 طلبياتي</h2>
-        <i class="fa-solid fa-times" onclick="toggleCartPanel()" style="font-size:24px;"></i>
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h2 style="margin:0">🛒 طلبياتي</h2>
+        <i class="fa-solid fa-circle-xmark" onclick="toggleCartPanel()" style="font-size: 25px; color:#ccc;"></i>
     </div>
+    
     <div id="cartList"></div>
-    <div style="border-top:1px solid #eee; padding-top:15px;">
-        <div style="display:flex; justify-content:space-between; font-size:20px; font-weight:bold; margin-bottom:10px;">
+    
+    <div style="border-top: 1px solid #eee; padding-top: 15px;">
+        <div style="display:flex; justify-content:space-between; font-size: 20px; font-weight: bold; margin-bottom: 15px;">
             <span>المجموع:</span>
             <span id="cartTotal">0 دج</span>
         </div>
-        <button class="btn-send" id="sendBtn" onclick="sendAllToKitchen()">إرسال للمطبخ 📤</button>
+        <button class="btn-main" id="sendBtn" style="background:var(--main-color); color:#fff;" onclick="sendAllToKitchen()">📤 إرسال للمطبخ (طاولة 1)</button>
     </div>
 </div>
 
 <script>
-// --- هام جداً: تأكد من هذه البيانات من Firebase Console ---
+// --- Firebase Config ---
 const firebaseConfig = {
     apiKey: "YOUR_API_KEY",
     authDomain: "restaurant-e323a.firebaseapp.com",
@@ -93,16 +141,9 @@ const firebaseConfig = {
     messagingSenderId: "309092455734",
     appId: "YOUR_APP_ID"
 };
-
-// تهيئة Firebase مع فحص الاتصال
-try {
-    firebase.initializeApp(firebaseConfig);
-    console.log("Firebase Initialized");
-} catch (e) {
-    alert("خطأ في تهيئة Firebase: " + e.message);
-}
-
+firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
+
 let cart = [];
 let currentItem = null;
 
@@ -112,21 +153,18 @@ function fetchMenu(catName, el) {
     const grid = document.getElementById('grid');
     grid.innerHTML = "جاري التحميل...";
 
-    db.collection("products").where("category", "==", catName).get()
-    .then(snap => {
+    db.collection("products").where("category", "==", catName).get().then(snap => {
         grid.innerHTML = "";
         snap.forEach(doc => {
             const d = doc.data();
             grid.innerHTML += `
                 <div class="card" onclick='openModal(${JSON.stringify(d)})'>
                     <img src="${d.img || 'https://via.placeholder.com/150'}">
-                    <div class="card-info">
-                        <h3>${d.name}</h3>
-                        <div style="color:var(--primary); font-weight:bold;">${d.price} دج</div>
-                    </div>
+                    <h3>${d.name}</h3>
+                    <p>${d.price} دج</p>
                 </div>`;
         });
-    }).catch(err => alert("خطأ في جلب البيانات: " + err.message));
+    });
 }
 
 function openModal(item) {
@@ -154,8 +192,8 @@ function toggleCartItem() {
 function updateModalButton() {
     const btn = document.getElementById('actionBtn');
     const inCart = cart.some(i => i.name === currentItem.name);
-    btn.innerText = inCart ? "إزالة" : "إضافة";
-    btn.style.background = inCart ? "#333" : "var(--primary)";
+    btn.innerText = inCart ? "إزالة من السلة" : "إضافة للطلب";
+    btn.style.background = inCart ? "#333" : "#27ae60";
 }
 
 function renderCart() {
@@ -167,10 +205,10 @@ function renderCart() {
         list.innerHTML += `
             <div class="cart-item">
                 <div class="cart-item-info">
-                    <h4 style="margin:0">${item.name}</h4>
-                    <small>${item.price} دج</small>
+                    <h4>${item.name}</h4>
+                    <span style="color:var(--main-color); font-weight:bold;">${item.price} دج</span>
                 </div>
-                <i class="fa-solid fa-trash-can remove-btn" onclick="removeItem(${idx})"></i>
+                <i class="fa-solid fa-trash" style="color:#e74c3c; cursor:pointer;" onclick="removeItem(${idx})"></i>
             </div>`;
     });
     document.getElementById('cartCount').innerText = cart.length;
@@ -188,7 +226,7 @@ function toggleCartPanel() {
     document.getElementById('cartPanel').classList.toggle('show');
 }
 
-// --- دالة الإرسال مع نظام كشف الخطأ ---
+// --- دالة الإرسال المعدلة للطاولة 1 ---
 function sendAllToKitchen() {
     if(cart.length === 0) return alert("سلتك فارغة!");
 
@@ -196,25 +234,27 @@ function sendAllToKitchen() {
     btn.disabled = true;
     btn.innerText = "جاري الإرسال...";
 
-    const orderData = {
-        tableNumber: 1, // الطاولة 1 ثابتة
-        items: cart.map(i => ({ name: i.name, price: parseInt(i.price) })),
-        total: cart.reduce((s, i) => s + parseInt(i.price), 0),
-        sentToCaisse: false,
-        status: "جديد", // حالة الطلب للمطبخ
-        time: firebase.firestore.FieldValue.serverTimestamp()
-    };
-
-    console.log("Sending order:", orderData);
-
-    db.collection("serv").add(orderData)
-    .then((docRef) => {
-        console.log("Order sent with ID: ", docRef.id);
-        alert("✅ تم إرسال طلبك للمطبخ بنجاح!");
+    db.collection("menu").add({
+        tableNumber: "1", // تم تثبيت رقم الطاولة هنا
+        items: cart.map(i => ({name: i.name, price: i.price})),
+        status: "جديد",
+        total: document.getElementById('cartTotal').innerText,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+    }).then(() => {
+        alert("✅ تم إرسال طلب الطاولة 1 للمطبخ!");
         cart = [];
         renderCart();
         toggleCartPanel();
         btn.disabled = false;
-        btn.innerText = "إرسال للمطبخ 📤";
-    })
-    .catch((error
+        btn.innerText = "📤 إرسال للمطبخ (طاولة 1)";
+    }).catch(err => {
+        alert("خطأ في الإرسال: " + err.message);
+        btn.disabled = false;
+    });
+}
+
+window.onload = () => fetchMenu('طعام', document.querySelector('.cat'));
+</script>
+
+</body>
+</html>
