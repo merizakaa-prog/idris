@@ -1,5 +1,5 @@
 
-html_code = '''<!DOCTYPE html>
+html_fixed = '''<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
@@ -41,7 +41,6 @@ html_code = '''<!DOCTYPE html>
             overflow-x: hidden;
         }
 
-        /* شريط التنقل */
         .nav-header {
             background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
             color: white;
@@ -67,7 +66,6 @@ html_code = '''<!DOCTYPE html>
             font-size: 0.85rem;
         }
 
-        /* شريط الأقسام */
         .category-bar {
             display: flex;
             gap: 12px;
@@ -114,7 +112,6 @@ html_code = '''<!DOCTYPE html>
             box-shadow: 0 4px 15px rgba(139, 0, 0, 0.3);
         }
 
-        /* شبكة المنتجات */
         .grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
@@ -178,7 +175,25 @@ html_code = '''<!DOCTYPE html>
             font-weight: 600;
         }
 
-        /* حالة التحميل */
+        .unavailable {
+            opacity: 0.6;
+            filter: grayscale(0.8);
+        }
+        
+        .unavailable::after {
+            content: "غير متوفر";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.7);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 0.9rem;
+        }
+
         .skeleton {
             background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
             background-size: 200% 100%;
@@ -190,7 +205,6 @@ html_code = '''<!DOCTYPE html>
             100% { background-position: -200% 0; }
         }
 
-        /* المودالات */
         .overlay {
             position: fixed;
             inset: 0;
@@ -226,7 +240,6 @@ html_code = '''<!DOCTYPE html>
             transform: translateY(0);
         }
 
-        /* تفاصيل الطبق */
         .video-container {
             position: relative;
             border-radius: var(--radius);
@@ -291,7 +304,6 @@ html_code = '''<!DOCTYPE html>
             font-weight: 600;
         }
 
-        /* أزرار */
         .btn-main {
             width: 100%;
             padding: 18px;
@@ -315,8 +327,9 @@ html_code = '''<!DOCTYPE html>
             box-shadow: 0 4px 15px rgba(139, 0, 0, 0.3);
         }
         
-        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(139, 0, 0, 0.4); }
-        .btn-primary:active { transform: translateY(0); }
+        .btn-primary:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(139, 0, 0, 0.4); }
+        .btn-primary:active:not(:disabled) { transform: translateY(0); }
+        .btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
         
         .btn-success {
             background: linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%);
@@ -324,7 +337,7 @@ html_code = '''<!DOCTYPE html>
             box-shadow: 0 4px 15px rgba(39, 174, 96, 0.3);
         }
         
-        .btn-success:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(39, 174, 96, 0.4); }
+        .btn-success:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(39, 174, 96, 0.4); }
         
         .btn-secondary {
             background: transparent;
@@ -335,7 +348,6 @@ html_code = '''<!DOCTYPE html>
         
         .btn-secondary:hover { background: #f8f9fa; }
 
-        /* زر السلة العائم */
         .float-btn {
             position: fixed;
             bottom: 25px;
@@ -358,11 +370,7 @@ html_code = '''<!DOCTYPE html>
             justify-content: space-between;
         }
         
-        .float-btn:hover {
-            transform: translateX(-50%) translateY(-3px);
-            box-shadow: 0 15px 40px rgba(139, 0, 0, 0.5);
-        }
-        
+        .float-btn:hover { transform: translateX(-50%) translateY(-3px); box-shadow: 0 15px 40px rgba(139, 0, 0, 0.5); }
         .float-btn:active { transform: translateX(-50%) translateY(0); }
         
         .cart-info {
@@ -378,7 +386,6 @@ html_code = '''<!DOCTYPE html>
             font-size: 0.9rem;
         }
 
-        /* قائمة السلة */
         .cart-header {
             text-align: center;
             margin-bottom: 25px;
@@ -402,14 +409,8 @@ html_code = '''<!DOCTYPE html>
             padding-right: 5px;
         }
         
-        .cart-items-list::-webkit-scrollbar {
-            width: 6px;
-        }
-        
-        .cart-items-list::-webkit-scrollbar-thumb {
-            background: var(--border);
-            border-radius: 3px;
-        }
+        .cart-items-list::-webkit-scrollbar { width: 6px; }
+        .cart-items-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
         
         .cart-row {
             display: flex;
@@ -487,7 +488,6 @@ html_code = '''<!DOCTYPE html>
             margin-top: 15px;
         }
 
-        /* Spinner */
         .spinner {
             width: 20px;
             height: 20px;
@@ -500,7 +500,6 @@ html_code = '''<!DOCTYPE html>
         
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        /* أيقونة الإغلاق */
         .close-icon {
             position: absolute;
             top: 20px;
@@ -525,7 +524,6 @@ html_code = '''<!DOCTYPE html>
             transform: rotate(90deg);
         }
 
-        /* رسائل التنبيه */
         .toast {
             position: fixed;
             top: 20px;
@@ -553,7 +551,6 @@ html_code = '''<!DOCTYPE html>
         .toast.success { background: var(--accent); }
         .toast.error { background: #e74c3c; }
 
-        /* حالة فارغة */
         .empty-state {
             text-align: center;
             padding: 60px 20px;
@@ -566,7 +563,6 @@ html_code = '''<!DOCTYPE html>
             opacity: 0.5;
         }
 
-        /* Responsive */
         @media (max-width: 480px) {
             .grid { grid-template-columns: repeat(2, 1fr); gap: 15px; padding: 15px; }
             .float-btn { min-width: 90%; }
@@ -585,10 +581,8 @@ html_code = '''<!DOCTYPE html>
 </head>
 <body>
 
-<!-- Toast Notification -->
 <div id="toast" class="toast"></div>
 
-<!-- Header -->
 <div class="nav-header">
     <h1>
         <i class="fas fa-utensils"></i>
@@ -597,7 +591,6 @@ html_code = '''<!DOCTYPE html>
     </h1>
 </div>
 
-<!-- Categories -->
 <div class="category-bar" id="catBar">
     <div class="cat-item active" data-cat="طعام" onclick="changeCat('طعام', this)">
         <i class="fas fa-drumstick-bite"></i> طعام
@@ -613,7 +606,6 @@ html_code = '''<!DOCTYPE html>
     </div>
 </div>
 
-<!-- Products Grid -->
 <div id="grid" class="grid">
     <div class="card skeleton" style="height: 220px;"></div>
     <div class="card skeleton" style="height: 220px;"></div>
@@ -621,7 +613,6 @@ html_code = '''<!DOCTYPE html>
     <div class="card skeleton" style="height: 220px;"></div>
 </div>
 
-<!-- Dish Details Modal -->
 <div class="overlay" id="dishOverlay" onclick="closeModalOnBackdrop(event, 'dishOverlay')">
     <div class="content-panel" onclick="event.stopPropagation()">
         <div class="close-icon" onclick="closeModal('dishOverlay')">
@@ -656,7 +647,6 @@ html_code = '''<!DOCTYPE html>
     </div>
 </div>
 
-<!-- Cart Modal -->
 <div class="overlay" id="cartOverlay" onclick="closeModalOnBackdrop(event, 'cartOverlay')">
     <div class="content-panel" onclick="event.stopPropagation()">
         <div class="close-icon" onclick="closeModal('cartOverlay')">
@@ -693,7 +683,6 @@ html_code = '''<!DOCTYPE html>
     </div>
 </div>
 
-<!-- Floating Cart Button -->
 <button class="float-btn" onclick="openCartConfirmation()">
     <div class="cart-info">
         <i class="fas fa-shopping-basket"></i>
@@ -703,7 +692,7 @@ html_code = '''<!DOCTYPE html>
 </button>
 
 <script>
-// Firebase Configuration - استبدل ببياناتك
+// Firebase Configuration
 const firebaseConfig = {
     apiKey: "AIzaSy...",
     authDomain: "restaurant-e323a.firebaseapp.com",
@@ -713,7 +702,6 @@ const firebaseConfig = {
     appId: "..."
 };
 
-// Initialize Firebase
 try {
     firebase.initializeApp(firebaseConfig);
 } catch (e) {
@@ -724,12 +712,10 @@ try {
 const db = firebase.firestore();
 const TABLE_NUMBER = 2;
 
-// State Management
 let cart = [];
 let currentItem = null;
 let unsubscribe = null;
 
-// Toast Notification System
 function showToast(message, type = 'success') {
     const toast = document.getElementById('toast');
     toast.className = `toast ${type}`;
@@ -741,9 +727,8 @@ function showToast(message, type = 'success') {
     setTimeout(() => toast.classList.remove('show'), 3000);
 }
 
-// Fetch Dishes with Real-time Updates
+// FIXED: استعلام بسيط بدون شرط != الذي يتطلب فهرس مركب
 function fetchDishes(category) {
-    // Unsubscribe from previous listener
     if (unsubscribe) unsubscribe();
     
     const grid = document.getElementById('grid');
@@ -754,9 +739,9 @@ function fetchDishes(category) {
         <div class="card skeleton" style="height: 220px;"></div>
     `;
 
+    // استخدام where بسيط مع == فقط (لا يتطلب فهرس مركب)
     unsubscribe = db.collection("dishes")
         .where("category", "==", category)
-        .where("available", "!=", false)
         .onSnapshot(snap => {
             grid.innerHTML = "";
             
@@ -773,6 +758,10 @@ function fetchDishes(category) {
             snap.forEach(doc => {
                 const data = doc.data();
                 const item = { id: doc.id, ...data };
+                
+                // فلترة المتاح client-side بدلاً من الاستعلام
+                if (data.available === false) return;
+                
                 const isInCart = cart.some(i => i.id === item.id);
                 
                 const card = document.createElement('div');
@@ -794,20 +783,34 @@ function fetchDishes(category) {
         }, err => {
             console.error("Fetch error:", err);
             showToast("خطأ في تحميل البيانات", "error");
+            
+            // عرض رسالة خطأ مفيدة في الواجهة
+            grid.innerHTML = `
+                <div class="empty-state" style="grid-column: 1/-1;">
+                    <i class="fas fa-exclamation-triangle" style="color: #e74c3c;"></i>
+                    <h3>خطأ في الاتصال</h3>
+                    <p>يرجى التحقق من الإنترنت والمحاولة مرة أخرى</p>
+                    <button onclick="fetchDishes('${category}')" style="margin-top: 15px; padding: 10px 20px; background: var(--primary); color: white; border: none; border-radius: 20px; cursor: pointer;">
+                        <i class="fas fa-redo"></i> إعادة المحاولة
+                    </button>
+                </div>`;
         });
 }
 
-// Modal Management
 function openModal(item) {
+    // التحقق من توفر الصنف
+    if (item.available === false) {
+        showToast('هذا الصنف غير متوفر حالياً', 'error');
+        return;
+    }
+    
     currentItem = item;
     const overlay = document.getElementById('dishOverlay');
     const video = document.getElementById('dishVideo');
     
-    // Set content
     document.getElementById('dishName').textContent = item.name;
     document.getElementById('dishPrice').textContent = `${item.price} دج`;
     
-    // Handle video
     if (item.video) {
         video.src = item.video;
         video.style.display = 'block';
@@ -815,7 +818,6 @@ function openModal(item) {
         video.style.display = 'none';
     }
     
-    // Set details
     const ingredients = Array.isArray(item.ingredients) 
         ? item.ingredients.join('، ') 
         : (item.ingredients || 'غير متوفر');
@@ -826,10 +828,8 @@ function openModal(item) {
     document.getElementById('dishIng').textContent = ingredients;
     document.getElementById('dishBen').textContent = benefits;
     
-    // Update button state
     updateAddButton();
     
-    // Show modal
     overlay.classList.add('show');
     document.body.style.overflow = 'hidden';
 }
@@ -872,13 +872,11 @@ function closeModalOnBackdrop(event, id) {
     }
 }
 
-// Cart Actions
 function handleCartAction() {
     const spinner = document.getElementById('addSpinner');
     const btnText = document.getElementById('addBtnText');
     const btnIcon = document.getElementById('addBtnIcon');
     
-    // Show loading
     spinner.style.display = 'block';
     btnText.style.opacity = '0';
     btnIcon.style.opacity = '0';
@@ -897,7 +895,6 @@ function handleCartAction() {
         updateMainUI();
         updateAddButton();
         
-        // Reset button
         spinner.style.display = 'none';
         btnText.style.opacity = '1';
         btnIcon.style.opacity = '1';
@@ -911,7 +908,6 @@ function updateMainUI() {
     document.getElementById('cartCount').textContent = count;
     document.getElementById('floatTotal').textContent = `${total} دج`;
     
-    // Animate cart button
     const floatBtn = document.querySelector('.float-btn');
     floatBtn.style.transform = 'translateX(-50%) scale(1.1)';
     setTimeout(() => {
@@ -970,14 +966,12 @@ function removeItem(index) {
     }
 }
 
-// Send Order
 async function sendOrderToKitchen() {
     const btn = document.getElementById('sendBtn');
     const spinner = document.getElementById('sendSpinner');
     const btnText = document.getElementById('sendBtnText');
     const btnIcon = document.getElementById('sendBtnIcon');
     
-    // Loading state
     btn.disabled = true;
     spinner.style.display = 'block';
     btnText.textContent = 'جاري الإرسال...';
@@ -1003,7 +997,6 @@ async function sendOrderToKitchen() {
         
         await db.collection("orders").add(orderData);
         
-        // Success
         showToast(`تم إرسال طلبك بنجاح! طاولة ${TABLE_NUMBER}`);
         cart = [];
         updateMainUI();
@@ -1020,19 +1013,15 @@ async function sendOrderToKitchen() {
     }
 }
 
-// Category Switching
 function changeCat(category, element) {
-    // Update UI
     document.querySelectorAll('.cat-item').forEach(item => {
         item.classList.remove('active');
     });
     element.classList.add('active');
     
-    // Fetch data
     fetchDishes(category);
 }
 
-// Keyboard shortcuts
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
         closeModal('dishOverlay');
@@ -1040,12 +1029,10 @@ document.addEventListener('keydown', (e) => {
     }
 });
 
-// Initialize
 window.addEventListener('DOMContentLoaded', () => {
     fetchDishes('طعام');
 });
 
-// Cleanup on page unload
 window.addEventListener('beforeunload', () => {
     if (unsubscribe) unsubscribe();
 });
@@ -1054,10 +1041,13 @@ window.addEventListener('beforeunload', () => {
 </body>
 </html>'''
 
-# Save to file
-with open('/mnt/kimi/output/menu_table_2_pro.html', 'w', encoding='utf-8') as f:
-    f.write(html_code)
+# Save fixed version
+with open('/mnt/kimi/output/menu_table_2_fixed.html', 'w', encoding='utf-8') as f:
+    f.write(html_fixed)
 
-print("✅ تم إنشاء الملف بنجاح!")
-print(f"📁 المسار: /mnt/kimi/output/menu_table_2_pro.html")
-print(f"📊 حجم الملف: {len(html_code):,} حرف")
+print("✅ تم إصلاح الكود!")
+print("📁 الملف: /mnt/kimi/output/menu_table_2_fixed.html")
+print("\n🔧 التعديلات:")
+print("1. إزالة where('available', '!=', false) - يتطلب فهرس مركب")
+print("2. استخدام فلترة client-side للأصناف المتاحة")
+print("3. إضافة معالجة أخطاء أفضل مع زر إعادة المحاولة")
