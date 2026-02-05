@@ -3,76 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لوحة التحكم | إدارة المنيو</title>
+    <title>لوحة التحكم | dishes</title>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     <style>
-        :root { --main: #8b0000; --green: #2ecc71; --blue: #3498db; }
+        :root { --main: #8b0000; --green: #2ecc71; }
         body { font-family: 'Tahoma', sans-serif; background: #f4f4f4; padding: 20px; direction: rtl; }
-        .admin-container { max-width: 600px; margin: auto; background: #fff; padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); margin-bottom: 30px; }
-        h2 { text-align: center; color: var(--main); }
-        label { display: block; margin-top: 15px; font-weight: bold; font-size: 14px; }
-        input, select, textarea { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; }
-        textarea { height: 80px; resize: vertical; }
-        .btn-main { width: 100%; padding: 15px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; background: var(--green); color: white; margin-top: 20px; font-size: 16px; }
-        .btn-cancel { background: #666; display: none; margin-top: 10px; color: white; }
-        
-        .items-list { max-width: 600px; margin: auto; background: #fff; padding: 20px; border-radius: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
-        .item-row { display: flex; align-items: center; justify-content: space-between; padding: 10px; border-bottom: 1px solid #eee; gap: 10px; }
+        .admin-container { max-width: 600px; margin: auto; background: #fff; padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+        input, select, textarea { width: 100%; padding: 12px; margin-top: 8px; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; }
+        .btn-main { width: 100%; padding: 15px; border: none; border-radius: 10px; background: var(--green); color: white; cursor: pointer; font-weight: bold; margin-top: 20px; }
+        .item-row { display: flex; align-items: center; justify-content: space-between; padding: 10px; border-bottom: 1px solid #eee; background: white; margin-top: 10px; border-radius: 10px; }
         .item-row img { width: 50px; height: 50px; border-radius: 8px; object-fit: cover; }
-        .item-info { flex-grow: 1; }
-        .item-info b { display: block; font-size: 14px; }
-        .actions button { padding: 5px 10px; border: none; border-radius: 5px; cursor: pointer; font-size: 12px; color: white; margin-left: 5px; }
-        .btn-edit { background: var(--blue); }
-        .btn-del { background: var(--main); }
-        #status { text-align: center; margin-top: 15px; font-weight: bold; color: var(--main); }
     </style>
 </head>
 <body>
 
 <div class="admin-container">
-    <h2 id="formTitle">➕ إضافة طبق جديد</h2>
-    
+    <h2 id="formTitle">➕ إضافة طبق إلى dishes</h2>
     <input type="hidden" id="editId">
     
-    <label>القسم:</label>
     <select id="itemCategory">
-        <option value="طعام">طعام 🍽️</option>
-        <option value="مشروبات">مشروبات 🥤</option>
-        <option value="تحلية">تحلية 🍰</option>
-        <option value="قاطو">قاطو 🍪</option>
+        <option value="طعام">طعام</option>
+        <option value="مشروبات">مشروبات</option>
+        <option value="تحلية">تحلية</option>
+        <option value="قاطو">قاطو</option>
     </select>
 
-    <label>اسم الطبق:</label>
-    <input type="text" id="itemName" placeholder="مثلاً: كيكة الشوكولاتة">
-    
-    <label>السعر (دج):</label>
-    <input type="number" id="itemPrice" placeholder="مثلاً: 500">
-    
-    <label>صورة الطبق:</label>
+    <input type="text" id="itemName" placeholder="اسم الطبق">
+    <input type="number" id="itemPrice" placeholder="السعر">
     <input type="file" id="fileImg" accept="image/*">
+    <textarea id="itemIngredients" placeholder="المكونات (افصل بينها بفاصلة ,)"></textarea>
+    <textarea id="itemBenefits" placeholder="الفوائد (افصل بينها بفاصلة ,)"></textarea>
 
-    <label>فيديو (اختياري):</label>
-    <input type="file" id="fileVideo" accept="video/*">
-
-    <label>المكونات (ضع فاصلة بين كل مكون):</label>
-    <textarea id="itemIngredients" placeholder="سكر، دقيق، بيض..."></textarea>
-    
-    <label>الفوائد (ضع فاصلة بين كل فائدة):</label>
-    <textarea id="itemBenefits" placeholder="طاقة عالية، فيتامينات..."></textarea>
-
-    <button id="submitBtn" class="btn-main" onclick="handleUpload()">حفظ ونشر الطبق ✅</button>
-    <button id="cancelBtn" class="btn-main btn-cancel" onclick="resetForm()">إلغاء التعديل ✖</button>
-    <p id="status"></p>
+    <button id="submitBtn" class="btn-main" onclick="handleUpload()">حفظ الطبق ✅</button>
+    <p id="status" style="text-align:center;"></p>
 </div>
 
-<div class="items-list">
-    <h3>📂 الأطباق الموجودة حالياً:</h3>
-    <div id="itemsContainer">جاري تحميل القائمة...</div>
-</div>
+<div id="itemsContainer" style="max-width:600px; margin:20px auto;"></div>
 
 <script>
-// --- إعدادات Firebase ---
 const firebaseConfig = {
     apiKey: "YOUR_API_KEY",
     authDomain: "restaurant-e323a.firebaseapp.com",
@@ -84,6 +53,7 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
+// Cloudinary Config
 const CLOUD_NAME = "dzrrirfig";
 const PRESET = "restaurant_preset";
 
@@ -91,122 +61,66 @@ async function uploadToCloudinary(file) {
     const formData = new FormData();
     formData.append("file", file);
     formData.append("upload_preset", PRESET);
-    const response = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/auto/upload`, { method: "POST", body: formData });
-    const data = await response.json();
+    const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/auto/upload`, { method: "POST", body: formData });
+    const data = await res.json();
     return data.secure_url;
 }
 
-// --- وظيفة الحفظ المصححة (تضمن تخزين المصفوفات) ---
 async function handleUpload() {
     const editId = document.getElementById('editId').value;
-    const name = document.getElementById('itemName').value;
-    const price = document.getElementById('itemPrice').value;
-    const imgFile = document.getElementById('fileImg').files[0];
-    const videoFile = document.getElementById('fileVideo').files[0];
     const status = document.getElementById('status');
-    const btn = document.getElementById('submitBtn');
-
-    if (!name || (!editId && !imgFile)) {
-        alert("يرجى إدخال البيانات الأساسية!"); return;
-    }
-
-    btn.disabled = true;
-    status.innerText = "⏳ جاري رفع البيانات...";
+    status.innerText = "⏳ جاري العمل...";
     
     try {
-        // تحويل النصوص إلى مصفوفات نظيفة بدون فراغات زائفة
-        const ingredientsArr = document.getElementById('itemIngredients').value
-            .split(',')
-            .map(s => s.trim())
-            .filter(s => s !== "");
-
-        const benefitsArr = document.getElementById('itemBenefits').value
-            .split(',')
-            .map(s => s.trim())
-            .filter(s => s !== "");
+        const ingredientsArr = document.getElementById('itemIngredients').value.split(',').map(s => s.trim()).filter(s => s !== "");
+        const benefitsArr = document.getElementById('itemBenefits').value.split(',').map(s => s.trim()).filter(s => s !== "");
 
         let updateData = {
-            name: name,
-            price: price,
+            name: document.getElementById('itemName').value,
+            price: document.getElementById('itemPrice').value,
             category: document.getElementById('itemCategory').value,
-            ingredients: ingredientsArr, // تخزين كمصفوفة حقيقية
-            benefits: benefitsArr,      // تخزين كمصفوفة حقيقية
+            ingredients: ingredientsArr,
+            benefits: benefitsArr,
             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         };
 
+        const imgFile = document.getElementById('fileImg').files[0];
         if (imgFile) updateData.img = await uploadToCloudinary(imgFile);
-        if (videoFile) updateData.video = await uploadToCloudinary(videoFile);
 
         if (editId) {
-            await db.collection("products").doc(editId).update(updateData);
-            status.innerText = "✅ تم التعديل بنجاح!";
+            await db.collection("dishes").doc(editId).update(updateData);
         } else {
             updateData.createdAt = firebase.firestore.FieldValue.serverTimestamp();
-            await db.collection("products").add(updateData);
-            status.innerText = "✅ تم الإضافة بنجاح!";
+            await db.collection("dishes").add(updateData);
         }
-        
-        setTimeout(resetForm, 2000);
-    } catch (e) {
-        status.innerText = "❌ خطأ: " + e.message;
-    } finally {
-        btn.disabled = false;
-    }
+        status.innerText = "✅ نجحت العملية!";
+        location.reload();
+    } catch (e) { status.innerText = "❌ خطأ: " + e.message; }
 }
 
 function loadItems() {
-    const container = document.getElementById('itemsContainer');
-    db.collection("products").orderBy("createdAt", "desc").onSnapshot(snap => {
-        container.innerHTML = "";
+    db.collection("dishes").orderBy("createdAt", "desc").onSnapshot(snap => {
+        const container = document.getElementById('itemsContainer');
+        container.innerHTML = "<h3>الأطباق في dishes:</h3>";
         snap.forEach(doc => {
             const item = doc.data();
             container.innerHTML += `
                 <div class="item-row">
                     <img src="${item.img || ''}">
-                    <div class="item-info">
-                        <b>${item.name}</b>
-                        <span>${item.category} - ${item.price} دج</span>
-                    </div>
-                    <div class="actions">
-                        <button class="btn-edit" onclick='startEdit("${doc.id}", ${JSON.stringify(item)})'>تعديل</button>
-                        <button class="btn-del" onclick='deleteItem("${doc.id}")'>حذف</button>
-                    </div>
+                    <div><b>${item.name}</b></div>
+                    <button onclick='startEdit("${doc.id}", ${JSON.stringify(item)})'>تعديل</button>
                 </div>`;
         });
     });
 }
-
 function startEdit(id, data) {
     document.getElementById('editId').value = id;
     document.getElementById('itemName').value = data.name;
     document.getElementById('itemPrice').value = data.price;
-    document.getElementById('itemCategory').value = data.category;
-    
-    // عند التعديل، نحول المصفوفة إلى نص مفصول بفواصل ليراها المستخدم
-    document.getElementById('itemIngredients').value = data.ingredients ? data.ingredients.join(', ') : "";
-    document.getElementById('itemBenefits').value = data.benefits ? data.benefits.join(', ') : "";
-    
-    document.getElementById('formTitle').innerText = "📝 تعديل الطبق";
-    document.getElementById('submitBtn').innerText = "تحديث الطبق ✅";
-    document.getElementById('cancelBtn').style.display = "block";
-    window.scrollTo(0, 0);
+    document.getElementById('itemIngredients').value = data.ingredients.join(',');
+    document.getElementById('itemBenefits').value = data.benefits.join(',');
+    document.getElementById('formTitle').innerText = "📝 تعديل في dishes";
 }
-
-async function deleteItem(id) {
-    if (confirm("حذف هذا الطبق نهائياً؟")) {
-        await db.collection("products").doc(id).delete();
-    }
-}
-
-function resetForm() {
-    document.getElementById('editId').value = "";
-    document.querySelectorAll('input, textarea').forEach(i => i.value = "");
-    document.getElementById('formTitle').innerText = "➕ إضافة طبق جديد";
-    document.getElementById('submitBtn').innerText = "حفظ ونشر الطبق ✅";
-    document.getElementById('cancelBtn').style.display = "none";
-    document.getElementById('status').innerText = "";
-}
-
 loadItems();
 </script>
 </body>
