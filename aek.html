@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sweet & Salt | القائمة الاحترافية</title>
+    <title>Sweet & Salt | Table 1</title>
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -25,8 +25,9 @@
         }
 
         /* الهيدر */
-        .header { padding: 30px 20px; background: white; text-align: center; }
+        .header { padding: 30px 20px; background: white; text-align: center; border-bottom: 2px solid var(--primary); }
         .header h1 { margin: 0; font-size: 26px; color: var(--primary); font-weight: 900; }
+        .table-badge { background: var(--primary); color: white; padding: 4px 15px; border-radius: 20px; font-size: 14px; }
 
         /* شريط الأصناف */
         .category-bar {
@@ -41,18 +42,13 @@
             cursor: pointer; border: 1px solid #eee; transition: 0.3s;
         }
         .cat.active { background: var(--primary); color: white; border-color: var(--primary); }
-        .cat i { font-size: 20px; margin-bottom: 5px; }
 
         /* شبكة المنتجات */
-        .container { padding: 15px; margin-bottom: 100px; }
-        .grid { 
-            display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); 
-            gap: 15px; 
-        }
+        .container { padding: 15px; margin-bottom: 120px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 15px; }
         .card { background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
         .card img { width: 100%; height: 150px; object-fit: cover; }
         .card-info { padding: 12px; text-align: center; }
-        .card h3 { margin: 5px 0; font-size: 15px; }
         .card .price { color: var(--primary); font-weight: 900; }
 
         /* السلة العائمة */
@@ -63,7 +59,7 @@
             justify-content: space-between; padding: 0 20px; z-index: 500;
         }
 
-        /* لوحة السلة المحدثة لعلاج اختفاء الحروف */
+        /* لوحة السلة */
         .cart-panel {
             position: fixed; bottom: -100%; left: 0; width: 100%; 
             height: 85vh; background: white; border-radius: 30px 30px 0 0;
@@ -72,73 +68,35 @@
             box-shadow: 0 -10px 30px rgba(0,0,0,0.1);
         }
         .cart-panel.show { bottom: 0; }
-
         #cartList { flex: 1; overflow-y: auto; margin: 15px 0; padding: 0 5px; }
 
-        /* تصميم عنصر السلة - حل مشكلة النصوص */
+        /* عنصر السلة - تصميم يحمي الحروف الأولى */
         .cart-item {
-            display: flex;
-            align-items: center;
-            padding: 15px;
-            background: #fdfdfd;
-            border-radius: 18px;
-            margin-bottom: 12px;
-            border: 1px solid #f0f0f0;
-            direction: rtl; /* تأكيد الاتجاه */
+            display: flex; align-items: center; padding: 15px;
+            background: #fdfdfd; border-radius: 18px; margin-bottom: 12px;
+            border: 1px solid #f0f0f0; direction: rtl;
         }
-
-        .cart-item-info {
-            flex: 1;
-            text-align: right;
-            padding-right: 15px; /* مسافة أمان للحروف الأولى من اليمين */
-            overflow: hidden;
-        }
-
-        .cart-item-info h4 {
-            margin: 0;
-            font-size: 16px;
-            color: #333;
-            white-space: normal;
-            word-wrap: break-word;
-        }
-
-        .cart-item-info span {
-            color: var(--primary);
-            font-weight: bold;
-            font-size: 14px;
-        }
-
-        .remove-btn {
-            color: #ff4d4d;
-            font-size: 18px;
-            padding: 10px;
-            cursor: pointer;
-            flex-shrink: 0;
-        }
-
-        /* المودال */
-        .modal {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.8);
-            display: none; justify-content: center; align-items: flex-end; z-index: 2000;
-        }
-        .modal.show { display: flex; }
-        .modal-box {
-            background: white; width: 100%; max-width: 500px; 
-            border-radius: 30px 30px 0 0; padding: 25px;
-            max-height: 90vh; overflow-y: auto;
-        }
+        .cart-item-info { flex: 1; text-align: right; padding-right: 15px; overflow: hidden; }
+        .cart-item-info h4 { margin: 0; font-size: 16px; color: #333; line-height: 1.4; white-space: normal; }
+        .remove-btn { color: #ff4d4d; font-size: 18px; padding: 10px; cursor: pointer; flex-shrink: 0; }
 
         .btn-send {
             width: 100%; padding: 18px; background: var(--primary);
             color: white; border: none; border-radius: 18px;
             font-size: 18px; font-weight: bold; cursor: pointer;
         }
+
+        /* المودال */
+        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: none; justify-content: center; align-items: flex-end; z-index: 2000; }
+        .modal.show { display: flex; }
+        .modal-box { background: white; width: 100%; max-width: 500px; border-radius: 30px 30px 0 0; padding: 25px; max-height: 90vh; overflow-y: auto; }
     </style>
 </head>
 <body>
 
 <div class="header">
     <h1>SWEET & SALT</h1>
+    <span class="table-badge">طاولة رقم 1</span>
 </div>
 
 <div class="category-bar">
@@ -181,7 +139,7 @@
 
 <div class="cart-panel" id="cartPanel">
     <div style="display:flex; justify-content:space-between; align-items:center;">
-        <h2 style="margin:0">🛒 سلة الطلبات</h2>
+        <h2 style="margin:0">🛒 قائمة طلباتك</h2>
         <i class="fa-solid fa-xmark" onclick="toggleCartPanel()" style="font-size:24px; color:#ccc;"></i>
     </div>
 
@@ -272,7 +230,6 @@ function renderCart() {
     
     cart.forEach((item, idx) => {
         total += parseInt(item.price);
-        // تم تبديل الترتيب ليظهر الاسم يميناً والحذف يساراً بوضوح
         list.innerHTML += `
             <div class="cart-item">
                 <div class="cart-item-info">
@@ -300,22 +257,26 @@ function toggleCartPanel() {
     document.getElementById('cartPanel').classList.toggle('show');
 }
 
+// تعديل الإرسال للطاولة رقم 1 تلقائياً
 function sendAllToKitchen() {
-    if(cart.length === 0) return;
-    const table = prompt("رقم الطاولة:");
-    if(!table) return;
+    if(cart.length === 0) return alert("السلة فارغة!");
+
+    const tableNumber = 1; // تثبيت رقم الطاولة
 
     db.collection("serv").add({
-        tableNumber: parseInt(table),
+        tableNumber: tableNumber,
         items: cart.map(i => ({name: i.name, price: parseInt(i.price)})),
         total: cart.reduce((s, i) => s + parseInt(i.price), 0),
         sentToCaisse: false,
         time: firebase.firestore.FieldValue.serverTimestamp()
     }).then(() => {
-        alert("✅ تم إرسال طلبك!");
+        alert("✅ تم إرسال طلبك للمطبخ! (طاولة رقم 1)");
         cart = [];
         renderCart();
         toggleCartPanel();
+    }).catch((error) => {
+        console.error("Error sending order: ", error);
+        alert("فشل في إرسال الطلب، تأكد من الاتصال.");
     });
 }
 
