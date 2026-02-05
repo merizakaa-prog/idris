@@ -13,20 +13,19 @@
         h2 { text-align: center; color: var(--main); }
         label { display: block; margin-top: 15px; font-weight: bold; font-size: 14px; }
         input, select, textarea { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; }
+        textarea { height: 80px; resize: vertical; }
         .btn-main { width: 100%; padding: 15px; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; background: var(--green); color: white; margin-top: 20px; font-size: 16px; }
-        .btn-cancel { background: #666; display: none; margin-top: 10px; }
+        .btn-cancel { background: #666; display: none; margin-top: 10px; color: white; }
         
-        /* تنسيق قائمة المنتجات */
         .items-list { max-width: 600px; margin: auto; background: #fff; padding: 20px; border-radius: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
         .item-row { display: flex; align-items: center; justify-content: space-between; padding: 10px; border-bottom: 1px solid #eee; gap: 10px; }
         .item-row img { width: 50px; height: 50px; border-radius: 8px; object-fit: cover; }
         .item-info { flex-grow: 1; }
         .item-info b { display: block; font-size: 14px; }
-        .item-info span { font-size: 12px; color: #777; }
-        .actions button { padding: 5px 10px; border: none; border-radius: 5px; cursor: pointer; font-size: 12px; color: white; }
+        .actions button { padding: 5px 10px; border: none; border-radius: 5px; cursor: pointer; font-size: 12px; color: white; margin-left: 5px; }
         .btn-edit { background: var(--blue); }
         .btn-del { background: var(--main); }
-        #status { text-align: center; margin-top: 15px; font-weight: bold; }
+        #status { text-align: center; margin-top: 15px; font-weight: bold; color: var(--main); }
     </style>
 </head>
 <body>
@@ -34,7 +33,9 @@
 <div class="admin-container">
     <h2 id="formTitle">➕ إضافة طبق جديد</h2>
     
-    <input type="hidden" id="editId"> <label>القسم:</label>
+    <input type="hidden" id="editId">
+    
+    <label>القسم:</label>
     <select id="itemCategory">
         <option value="طعام">طعام 🍽️</option>
         <option value="مشروبات">مشروبات 🥤</option>
@@ -42,17 +43,23 @@
         <option value="قاطو">قاطو 🍪</option>
     </select>
 
-    <input type="text" id="itemName" placeholder="اسم الطبق">
-    <input type="number" id="itemPrice" placeholder="السعر (دج)">
+    <label>اسم الطبق:</label>
+    <input type="text" id="itemName" placeholder="مثلاً: كيكة الشوكولاتة">
     
-    <label>صورة الطبق (اتركها فارغة عند التعديل إذا لم ترد تغييرها):</label>
+    <label>السعر (دج):</label>
+    <input type="number" id="itemPrice" placeholder="مثلاً: 500">
+    
+    <label>صورة الطبق:</label>
     <input type="file" id="fileImg" accept="image/*">
 
     <label>فيديو (اختياري):</label>
     <input type="file" id="fileVideo" accept="video/*">
 
-    <textarea id="itemIngredients" placeholder="المكونات (فاصلة بين كل مكون)"></textarea>
-    <textarea id="itemBenefits" placeholder="الفوائد (فاصلة بين كل فائدة)"></textarea>
+    <label>المكونات (ضع فاصلة بين كل مكون):</label>
+    <textarea id="itemIngredients" placeholder="سكر، دقيق، بيض..."></textarea>
+    
+    <label>الفوائد (ضع فاصلة بين كل فائدة):</label>
+    <textarea id="itemBenefits" placeholder="طاقة عالية، فيتامينات..."></textarea>
 
     <button id="submitBtn" class="btn-main" onclick="handleUpload()">حفظ ونشر الطبق ✅</button>
     <button id="cancelBtn" class="btn-main btn-cancel" onclick="resetForm()">إلغاء التعديل ✖</button>
@@ -65,6 +72,7 @@
 </div>
 
 <script>
+// --- إعدادات Firebase ---
 const firebaseConfig = {
     apiKey: "YOUR_API_KEY",
     authDomain: "restaurant-e323a.firebaseapp.com",
@@ -79,7 +87,6 @@ const db = firebase.firestore();
 const CLOUD_NAME = "dzrrirfig";
 const PRESET = "restaurant_preset";
 
-// --- وظيفة الرفع لـ Cloudinary ---
 async function uploadToCloudinary(file) {
     const formData = new FormData();
     formData.append("file", file);
@@ -89,7 +96,7 @@ async function uploadToCloudinary(file) {
     return data.secure_url;
 }
 
-// --- وظيفة الحفظ (إضافة أو تعديل) ---
+// --- وظيفة الحفظ المصححة (تضمن تخزين المصفوفات) ---
 async function handleUpload() {
     const editId = document.getElementById('editId').value;
     const name = document.getElementById('itemName').value;
@@ -104,33 +111,42 @@ async function handleUpload() {
     }
 
     btn.disabled = true;
-    status.innerText = "⏳ جاري المعالجة...";
+    status.innerText = "⏳ جاري رفع البيانات...";
     
     try {
+        // تحويل النصوص إلى مصفوفات نظيفة بدون فراغات زائفة
+        const ingredientsArr = document.getElementById('itemIngredients').value
+            .split(',')
+            .map(s => s.trim())
+            .filter(s => s !== "");
+
+        const benefitsArr = document.getElementById('itemBenefits').value
+            .split(',')
+            .map(s => s.trim())
+            .filter(s => s !== "");
+
         let updateData = {
             name: name,
             price: price,
             category: document.getElementById('itemCategory').value,
-            ingredients: document.getElementById('itemIngredients').value.split(',').map(s => s.trim()),
-            benefits: document.getElementById('itemBenefits').value.split(',').map(s => s.trim()),
+            ingredients: ingredientsArr, // تخزين كمصفوفة حقيقية
+            benefits: benefitsArr,      // تخزين كمصفوفة حقيقية
             updatedAt: firebase.firestore.FieldValue.serverTimestamp()
         };
 
-        // رفع ملفات جديدة إذا وجدت
         if (imgFile) updateData.img = await uploadToCloudinary(imgFile);
         if (videoFile) updateData.video = await uploadToCloudinary(videoFile);
 
         if (editId) {
-            // عملية تعديل
             await db.collection("products").doc(editId).update(updateData);
-            status.innerText = "✅ تم تعديل الطبق بنجاح!";
+            status.innerText = "✅ تم التعديل بنجاح!";
         } else {
-            // عملية إضافة جديدة
             updateData.createdAt = firebase.firestore.FieldValue.serverTimestamp();
             await db.collection("products").add(updateData);
-            status.innerText = "✅ تم إضافة الطبق بنجاح!";
+            status.innerText = "✅ تم الإضافة بنجاح!";
         }
-        resetForm();
+        
+        setTimeout(resetForm, 2000);
     } catch (e) {
         status.innerText = "❌ خطأ: " + e.message;
     } finally {
@@ -138,7 +154,6 @@ async function handleUpload() {
     }
 }
 
-// --- جلب وعرض الأطباق ---
 function loadItems() {
     const container = document.getElementById('itemsContainer');
     db.collection("products").orderBy("createdAt", "desc").onSnapshot(snap => {
@@ -147,7 +162,7 @@ function loadItems() {
             const item = doc.data();
             container.innerHTML += `
                 <div class="item-row">
-                    <img src="${item.img}">
+                    <img src="${item.img || ''}">
                     <div class="item-info">
                         <b>${item.name}</b>
                         <span>${item.category} - ${item.price} دج</span>
@@ -161,14 +176,15 @@ function loadItems() {
     });
 }
 
-// --- تفعيل وضع التعديل ---
 function startEdit(id, data) {
     document.getElementById('editId').value = id;
     document.getElementById('itemName').value = data.name;
     document.getElementById('itemPrice').value = data.price;
     document.getElementById('itemCategory').value = data.category;
-    document.getElementById('itemIngredients').value = data.ingredients.join(', ');
-    document.getElementById('itemBenefits').value = data.benefits.join(', ');
+    
+    // عند التعديل، نحول المصفوفة إلى نص مفصول بفواصل ليراها المستخدم
+    document.getElementById('itemIngredients').value = data.ingredients ? data.ingredients.join(', ') : "";
+    document.getElementById('itemBenefits').value = data.benefits ? data.benefits.join(', ') : "";
     
     document.getElementById('formTitle').innerText = "📝 تعديل الطبق";
     document.getElementById('submitBtn').innerText = "تحديث الطبق ✅";
@@ -176,23 +192,22 @@ function startEdit(id, data) {
     window.scrollTo(0, 0);
 }
 
-// --- حذف طبق ---
 async function deleteItem(id) {
-    if (confirm("هل أنت متأكد من حذف هذا الطبق؟")) {
+    if (confirm("حذف هذا الطبق نهائياً؟")) {
         await db.collection("products").doc(id).delete();
     }
 }
 
-// --- إعادة تعيين النموذج ---
 function resetForm() {
     document.getElementById('editId').value = "";
     document.querySelectorAll('input, textarea').forEach(i => i.value = "");
     document.getElementById('formTitle').innerText = "➕ إضافة طبق جديد";
     document.getElementById('submitBtn').innerText = "حفظ ونشر الطبق ✅";
     document.getElementById('cancelBtn').style.display = "none";
+    document.getElementById('status').innerText = "";
 }
 
-loadItems(); // تشغيل الجلب عند فتح الصفحة
+loadItems();
 </script>
 </body>
 </html>
