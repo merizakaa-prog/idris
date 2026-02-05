@@ -1,5 +1,5 @@
 
-html_video_fixed = '''<!DOCTYPE html>
+html_complete_fixed = '''<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
@@ -221,68 +221,84 @@ html_video_fixed = '''<!DOCTYPE html>
             transform: translateY(0);
         }
 
-        /* ==================== مشغل الفيديو المحسن ==================== */
-        .video-wrapper {
+        /* ==================== عارض الوسائط (صورة + فيديو) ==================== */
+        .media-viewer {
             position: relative;
             width: 100%;
             background: #000;
             border-radius: var(--radius);
             overflow: hidden;
             margin-bottom: 20px;
+            min-height: 250px;
         }
         
-        .video-container {
+        .media-image {
+            width: 100%;
+            height: 250px;
+            object-fit: cover;
+            display: block;
+        }
+        
+        .media-video-container {
             position: relative;
             width: 100%;
-            padding-top: 56.25%; /* نسبة 16:9 */
-            background: linear-gradient(135deg, #1a1a1a 0%, #000 100%);
+            height: 250px;
+            background: #000;
+            display: none;
+        }
+        
+        .media-video-container.has-video {
+            display: block;
         }
         
         #dishVideo {
-            position: absolute;
-            top: 0;
-            left: 0;
             width: 100%;
             height: 100%;
             object-fit: cover;
             display: block;
         }
         
-        /* زر التشغيل المخصص */
-        .video-play-btn {
+        /* زر تشغيل الفيديو فوق الصورة */
+        .video-play-overlay {
             position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 70px;
-            height: 70px;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.3);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .video-play-overlay:hover {
+            background: rgba(0,0,0,0.5);
+        }
+        
+        .play-button {
+            width: 80px;
+            height: 80px;
             background: rgba(139, 0, 0, 0.9);
             border: 3px solid rgba(255,255,255,0.3);
             border-radius: 50%;
-            cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
-            font-size: 24px;
+            font-size: 28px;
             transition: all 0.3s ease;
-            z-index: 10;
             box-shadow: 0 4px 20px rgba(0,0,0,0.4);
         }
         
-        .video-play-btn:hover {
-            transform: translate(-50%, -50%) scale(1.1);
+        .play-button:hover {
+            transform: scale(1.1);
             background: var(--primary);
-            box-shadow: 0 6px 30px rgba(139, 0, 0, 0.6);
-        }
-        
-        .video-play-btn.hidden {
-            opacity: 0;
-            pointer-events: none;
         }
         
         /* مؤشر التحميل */
-        .video-loading {
+        .video-loader {
             position: absolute;
             top: 50%;
             left: 50%;
@@ -294,15 +310,15 @@ html_video_fixed = '''<!DOCTYPE html>
             border-radius: 50%;
             animation: spin 1s linear infinite;
             display: none;
-            z-index: 5;
+            z-index: 10;
         }
         
-        .video-loading.show {
+        .video-loader.show {
             display: block;
         }
         
         /* رسالة خطأ الفيديو */
-        .video-error {
+        .video-error-msg {
             position: absolute;
             top: 50%;
             left: 50%;
@@ -314,77 +330,41 @@ html_video_fixed = '''<!DOCTYPE html>
             padding: 20px;
         }
         
-        .video-error.show {
+        .video-error-msg.show {
             display: block;
         }
         
-        .video-error i {
-            font-size: 3rem;
+        .video-error-msg i {
+            font-size: 2.5rem;
             margin-bottom: 10px;
             color: #e74c3c;
         }
         
-        /* شريط التحكم المخصص */
-        .video-controls {
+        /* زر إغلاق الفيديو والعودة للصورة */
+        .close-video-btn {
             position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
-            padding: 20px 15px 15px;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-        
-        .video-wrapper:hover .video-controls {
-            opacity: 1;
-        }
-        
-        .control-btn {
-            background: none;
+            top: 10px;
+            right: 10px;
+            width: 35px;
+            height: 35px;
+            background: rgba(0,0,0,0.6);
             border: none;
+            border-radius: 50%;
             color: white;
-            font-size: 18px;
             cursor: pointer;
-            width: 40px;
-            height: 40px;
-            display: flex;
+            display: none;
             align-items: center;
             justify-content: center;
-            border-radius: 50%;
+            z-index: 20;
             transition: background 0.2s;
         }
         
-        .control-btn:hover {
-            background: rgba(255,255,255,0.2);
+        .close-video-btn:hover {
+            background: rgba(0,0,0,0.8);
         }
         
-        .progress-bar {
-            flex: 1;
-            height: 5px;
-            background: rgba(255,255,255,0.3);
-            border-radius: 3px;
-            cursor: pointer;
-            position: relative;
-        }
-        
-        .progress-fill {
-            height: 100%;
-            background: var(--primary);
-            border-radius: 3px;
-            width: 0%;
-            transition: width 0.1s linear;
-        }
-        
-        .time-display {
-            color: white;
-            font-size: 0.85rem;
-            font-family: monospace;
-            min-width: 45px;
-            text-align: center;
+        .close-video-btn.show {
+            display: flex;
         }
 
         /* ========================================================= */
@@ -702,7 +682,8 @@ html_video_fixed = '''<!DOCTYPE html>
             .float-btn { min-width: 90%; }
             .category-bar { padding: 15px 10px; }
             .cat-item { min-width: 85px; padding: 12px 15px; font-size: 0.85rem; }
-            .video-play-btn { width: 60px; height: 60px; font-size: 20px; }
+            .media-image, .media-video-container { height: 200px; }
+            .play-button { width: 60px; height: 60px; font-size: 22px; }
         }
         
         @media (min-width: 768px) {
@@ -754,57 +735,47 @@ html_video_fixed = '''<!DOCTYPE html>
             <i class="fas fa-times"></i>
         </div>
         
-        <!-- مشغل الفيديو المحسن -->
-        <div class="video-wrapper" id="videoWrapper" style="display: none;">
-            <div class="video-container">
+        <!-- ==================== عارض الوسائط (صورة + فيديو) ==================== -->
+        <div class="media-viewer" id="mediaViewer">
+            <!-- الصورة (تظهر دائماً) -->
+            <img id="dishImage" class="media-image" src="" alt="صورة الطبق">
+            
+            <!-- طبقة تشغيل الفيديو (تظهر فوق الصورة إذا كان هناك فيديو) -->
+            <div class="video-play-overlay" id="videoOverlay" style="display: none;" onclick="playVideo()">
+                <div class="play-button">
+                    <i class="fas fa-play"></i>
+                </div>
+            </div>
+            
+            <!-- حاوية الفيديو (تظهر عند النقر على التشغيل) -->
+            <div class="media-video-container" id="videoContainer">
                 <video 
                     id="dishVideo" 
                     preload="metadata"
                     playsinline
                     webkit-playsinline
                     x5-playsinline
-                    muted
-                    loop
                 >
                     <source src="" type="video/mp4">
-                    <source src="" type="video/webm">
-                    <source src="" type="video/ogg">
                     متصفحك لا يدعم تشغيل الفيديو
                 </video>
                 
                 <!-- مؤشر التحميل -->
-                <div class="video-loading" id="videoLoading"></div>
+                <div class="video-loader" id="videoLoader"></div>
                 
                 <!-- رسالة الخطأ -->
-                <div class="video-error" id="videoError">
+                <div class="video-error-msg" id="videoError">
                     <i class="fas fa-exclamation-circle"></i>
                     <p>خطأ في تحميل الفيديو</p>
-                    <small style="opacity: 0.8; display: block; margin-top: 5px;">تأكد من الرابط</small>
                 </div>
                 
-                <!-- زر التشغيل -->
-                <button class="video-play-btn" id="playBtn" onclick="togglePlay()">
-                    <i class="fas fa-play"></i>
+                <!-- زر إغلاق الفيديو -->
+                <button class="close-video-btn" id="closeVideoBtn" onclick="closeVideo(event)">
+                    <i class="fas fa-times"></i>
                 </button>
-                
-                <!-- شريط التحكم -->
-                <div class="video-controls">
-                    <button class="control-btn" onclick="togglePlay()" id="controlPlayBtn">
-                        <i class="fas fa-play"></i>
-                    </button>
-                    <div class="progress-bar" id="progressBar" onclick="seek(event)">
-                        <div class="progress-fill" id="progressFill"></div>
-                    </div>
-                    <span class="time-display" id="timeDisplay">0:00 / 0:00</span>
-                    <button class="control-btn" onclick="toggleMute()" id="muteBtn">
-                        <i class="fas fa-volume-mute"></i>
-                    </button>
-                    <button class="control-btn" onclick="toggleFullscreen()">
-                        <i class="fas fa-expand"></i>
-                    </button>
-                </div>
             </div>
         </div>
+        <!-- ========================================================= -->
         
         <div class="dish-header">
             <h2 id="dishName">--</h2>
@@ -898,10 +869,7 @@ const TABLE_NUMBER = 2;
 let cart = [];
 let currentItem = null;
 let unsubscribe = null;
-
-// Video Player State
 let videoElement = null;
-let isPlaying = false;
 
 function showToast(message, type = 'success') {
     const toast = document.getElementById('toast');
@@ -946,8 +914,6 @@ function fetchDishes(category) {
                 
                 if (data.available === false) return;
                 
-                const isInCart = cart.some(i => i.id === item.id);
-                
                 const card = document.createElement('div');
                 card.className = 'card';
                 card.innerHTML = `
@@ -980,158 +946,7 @@ function fetchDishes(category) {
         });
 }
 
-// ==================== مشغل الفيديو المحسن ====================
-
-function initVideoPlayer(videoUrl) {
-    videoElement = document.getElementById('dishVideo');
-    const wrapper = document.getElementById('videoWrapper');
-    const loading = document.getElementById('videoLoading');
-    const error = document.getElementById('videoError');
-    const playBtn = document.getElementById('playBtn');
-    
-    // إعادة تعيين الحالة
-    wrapper.style.display = 'block';
-    loading.classList.add('show');
-    error.classList.remove('show');
-    playBtn.classList.remove('hidden');
-    isPlaying = false;
-    updatePlayButton();
-    
-    // إيقاف الفيديو السابق
-    videoElement.pause();
-    videoElement.currentTime = 0;
-    
-    // تحميل الفيديو الجديد
-    if (videoUrl) {
-        // التحقق من صحة الرابط
-        const source = videoElement.querySelector('source');
-        source.src = videoUrl;
-        
-        // إعادة تحميل الفيديو
-        videoElement.load();
-        
-        // أحداث الفيديو
-        videoElement.onloadedmetadata = function() {
-            loading.classList.remove('show');
-            updateTimeDisplay();
-            console.log('Video loaded successfully:', videoUrl);
-        };
-        
-        videoElement.oncanplay = function() {
-            loading.classList.remove('show');
-            // تشغيل تلقائي muted (للأيفون)
-            videoElement.play().then(() => {
-                isPlaying = true;
-                updatePlayButton();
-                playBtn.classList.add('hidden');
-            }).catch(e => {
-                console.log('Autoplay prevented, waiting for user interaction');
-                isPlaying = false;
-                updatePlayButton();
-            });
-        };
-        
-        videoElement.onerror = function(e) {
-            console.error('Video error:', e);
-            loading.classList.remove('show');
-            error.classList.add('show');
-            playBtn.classList.add('hidden');
-            showToast('خطأ في تحميل الفيديو', 'error');
-        };
-        
-        videoElement.ontimeupdate = updateProgress;
-        videoElement.onended = function() {
-            isPlaying = false;
-            updatePlayButton();
-            playBtn.classList.remove('hidden');
-        };
-        
-    } else {
-        wrapper.style.display = 'none';
-    }
-}
-
-function togglePlay() {
-    if (!videoElement) return;
-    
-    if (isPlaying) {
-        videoElement.pause();
-        isPlaying = false;
-        document.getElementById('playBtn').classList.remove('hidden');
-    } else {
-        // إلغاء الصامت عند التشغيل اليدوي
-        videoElement.muted = false;
-        videoElement.play().then(() => {
-            isPlaying = true;
-            document.getElementById('playBtn').classList.add('hidden');
-            updateMuteButton();
-        }).catch(e => {
-            console.error('Play error:', e);
-            showToast('لا يمكن تشغيل الفيديو', 'error');
-        });
-    }
-    updatePlayButton();
-}
-
-function updatePlayButton() {
-    const icon = isPlaying ? 'fa-pause' : 'fa-play';
-    document.getElementById('controlPlayBtn').innerHTML = `<i class="fas ${icon}"></i>`;
-    document.getElementById('playBtn').innerHTML = `<i class="fas ${icon}"></i>`;
-}
-
-function toggleMute() {
-    if (!videoElement) return;
-    videoElement.muted = !videoElement.muted;
-    updateMuteButton();
-}
-
-function updateMuteButton() {
-    const icon = videoElement.muted ? 'fa-volume-mute' : 'fa-volume-up';
-    document.getElementById('muteBtn').innerHTML = `<i class="fas ${icon}"></i>`;
-}
-
-function updateProgress() {
-    if (!videoElement) return;
-    const progress = (videoElement.currentTime / videoElement.duration) * 100;
-    document.getElementById('progressFill').style.width = progress + '%';
-    updateTimeDisplay();
-}
-
-function updateTimeDisplay() {
-    if (!videoElement || !videoElement.duration) return;
-    const current = formatTime(videoElement.currentTime);
-    const duration = formatTime(videoElement.duration);
-    document.getElementById('timeDisplay').textContent = `${current} / ${duration}`;
-}
-
-function formatTime(seconds) {
-    if (isNaN(seconds)) return '0:00';
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-}
-
-function seek(event) {
-    if (!videoElement || !videoElement.duration) return;
-    const progressBar = document.getElementById('progressBar');
-    const rect = progressBar.getBoundingClientRect();
-    const pos = (event.clientX - rect.left) / rect.width;
-    videoElement.currentTime = pos * videoElement.duration;
-}
-
-function toggleFullscreen() {
-    if (!videoElement) return;
-    
-    if (videoElement.requestFullscreen) {
-        videoElement.requestFullscreen();
-    } else if (videoElement.webkitRequestFullscreen) {
-        videoElement.webkitRequestFullscreen();
-    } else if (videoElement.msRequestFullscreen) {
-        videoElement.msRequestFullscreen();
-    }
-}
-
-// =========================================================
+// ==================== عارض الوسائط (صورة + فيديو) ====================
 
 function openModal(item) {
     if (item.available === false) {
@@ -1142,12 +957,30 @@ function openModal(item) {
     currentItem = item;
     const overlay = document.getElementById('dishOverlay');
     
+    // تعيين البيانات الأساسية
     document.getElementById('dishName').textContent = item.name;
     document.getElementById('dishPrice').textContent = `${item.price} دج`;
     
-    // تهيئة الفيديو
-    initVideoPlayer(item.video);
+    // تعيين الصورة (تظهر دائماً)
+    const dishImage = document.getElementById('dishImage');
+    dishImage.src = item.img || 'https://via.placeholder.com/400x300?text=No+Image';
+    dishImage.style.display = 'block';
     
+    // إعادة تعيين حالة الفيديو
+    const videoContainer = document.getElementById('videoContainer');
+    const videoOverlay = document.getElementById('videoOverlay');
+    videoContainer.classList.remove('has-video');
+    videoContainer.style.display = 'none';
+    videoOverlay.style.display = 'none';
+    
+    // إذا كان هناك فيديو، أظهر زر التشغيل
+    if (item.video && item.video.trim() !== '') {
+        videoOverlay.style.display = 'flex';
+        // حفظ رابط الفيديو لاستخدامه لاحقاً
+        videoContainer.dataset.videoUrl = item.video;
+    }
+    
+    // تعيين المكونات والفوائد
     const ingredients = Array.isArray(item.ingredients) 
         ? item.ingredients.join('، ') 
         : (item.ingredients || 'غير متوفر');
@@ -1163,6 +996,83 @@ function openModal(item) {
     overlay.classList.add('show');
     document.body.style.overflow = 'hidden';
 }
+
+function playVideo() {
+    const videoContainer = document.getElementById('videoContainer');
+    const videoOverlay = document.getElementById('videoOverlay');
+    const dishImage = document.getElementById('dishImage');
+    const videoLoader = document.getElementById('videoLoader');
+    const videoError = document.getElementById('videoError');
+    const closeVideoBtn = document.getElementById('closeVideoBtn');
+    
+    const videoUrl = videoContainer.dataset.videoUrl;
+    if (!videoUrl) return;
+    
+    // إخفاء الصورة وزر التشغيل
+    dishImage.style.display = 'none';
+    videoOverlay.style.display = 'none';
+    
+    // إظهار حاوية الفيديو
+    videoContainer.classList.add('has-video');
+    videoContainer.style.display = 'block';
+    videoLoader.classList.add('show');
+    videoError.classList.remove('show');
+    closeVideoBtn.classList.add('show');
+    
+    // تهيئة الفيديو
+    videoElement = document.getElementById('dishVideo');
+    const source = videoElement.querySelector('source');
+    source.src = videoUrl;
+    
+    // أحداث الفيديو
+    videoElement.onloadedmetadata = function() {
+        videoLoader.classList.remove('show');
+    };
+    
+    videoElement.oncanplay = function() {
+        videoLoader.classList.remove('show');
+        videoElement.play().catch(e => {
+            console.log('Autoplay prevented:', e);
+            // على الأيفون، نحتاج لتفاعل المستخدم
+            showToast('انقر مرة أخرى لتشغيل الفيديو');
+        });
+    };
+    
+    videoElement.onerror = function(e) {
+        console.error('Video error:', e);
+        videoLoader.classList.remove('show');
+        videoError.classList.add('show');
+        showToast('خطأ في تحميل الفيديو', 'error');
+    };
+    
+    // تحميل الفيديو
+    videoElement.load();
+}
+
+function closeVideo(event) {
+    event.stopPropagation();
+    
+    const videoContainer = document.getElementById('videoContainer');
+    const videoOverlay = document.getElementById('videoOverlay');
+    const dishImage = document.getElementById('dishImage');
+    const closeVideoBtn = document.getElementById('closeVideoBtn');
+    
+    // إيقاف الفيديو
+    if (videoElement) {
+        videoElement.pause();
+        videoElement.src = '';
+        videoElement = null;
+    }
+    
+    // إخفاء الفيديو وإظهار الصورة
+    videoContainer.classList.remove('has-video');
+    videoContainer.style.display = 'none';
+    closeVideoBtn.classList.remove('show');
+    dishImage.style.display = 'block';
+    videoOverlay.style.display = 'flex';
+}
+
+// =========================================================
 
 function updateAddButton() {
     const isInCart = cart.some(i => i.id === currentItem.id);
@@ -1360,10 +1270,6 @@ document.addEventListener('keydown', (e) => {
         closeModal('dishOverlay');
         closeModal('cartOverlay');
     }
-    if (e.key === ' ' && videoElement) {
-        e.preventDefault();
-        togglePlay();
-    }
 });
 
 window.addEventListener('DOMContentLoaded', () => {
@@ -1379,17 +1285,15 @@ window.addEventListener('beforeunload', () => {
 </html>'''
 
 # Save fixed version
-with open('/mnt/kimi/output/menu_table_2_video_fixed.html', 'w', encoding='utf-8') as f:
-    f.write(html_video_fixed)
+with open('/mnt/kimi/output/menu_table_2_final.html', 'w', encoding='utf-8') as f:
+    f.write(html_complete_fixed)
 
-print("✅ تم إصلاح مشكلة الفيديو!")
-print("📁 الملف: /mnt/kimi/output/menu_table_2_video_fixed.html")
-print("\n🎬 تحسينات الفيديو:")
-print("1. دعم playsinline للأيفون (webkit-playsinline, x5-playsinline)")
-print("2. تشغيل تلقائي muted (مطلوب للأيفون)")
-print("3. إلغاء الصامت عند النقر على زر التشغيل")
-print("4. تحميل الفيديو بشكل صحيح مع preload=metadata")
-print("5. معالجة أخطاء الفيديو وعرض رسالة مناسبة")
-print("6. شريط تحكم مخصص مع progress bar")
-print("7. دعم fullscreen")
-print("8. تنسيق 16:9 responsive")
+print("✅ تم إصلاح الكود النهائي!")
+print("📁 الملف: /mnt/kimi/output/menu_table_2_final.html")
+print("\n🎯 التحسينات:")
+print("1. الصورة تظهر دائماً في المودال")
+print("2. زر تشغيل الفيديو يظهر فوق الصورة إذا وجد فيديو")
+print("3. عند الضغط على زر التشغيل، يختفي زر التشغيل وتظهر الصورة")
+print("4. زر X لإغلاق الفيديو والعودة للصورة")
+print("5. مؤشر تحميل ورسالة خطأ للفيديو")
+print("6. يدعم جميع الأجهزة (iPhone, Android, Desktop)")
