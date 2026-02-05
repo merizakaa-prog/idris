@@ -10,77 +10,49 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
     
     <style>
-        :root { 
-            --main-color: #8b0000; 
-            --bg-gray: #f8f9fa; 
-            --text-dark: #2d3436;
-        }
+        :root { --main: #8b0000; --gray: #f8f9fa; }
+        body { margin:0; font-family: 'Segoe UI', sans-serif; background: var(--gray); direction: rtl; text-align: right; }
+        
+        /* الهيدر */
+        .header { padding: 15px; background: white; text-align: center; border-bottom: 3px solid var(--main); }
+        .table-no { background: var(--main); color: white; padding: 4px 12px; border-radius: 20px; font-size: 13px; }
 
-        body { 
-            margin:0; font-family: 'Segoe UI', Tahoma, sans-serif; 
-            background: var(--bg-gray); color: var(--text-dark); 
-            direction: rtl; text-align: right;
-        }
+        /* التصنيفات */
+        .category-bar { display: flex; overflow-x: auto; padding: 15px; background: white; gap: 10px; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .cat { min-width: 80px; padding: 10px; background: white; border-radius: 15px; text-align: center; border: 1px solid #eee; cursor: pointer; }
+        .cat.active { background: var(--main); color: white; }
 
-        .header { padding: 20px; background: white; text-align: center; border-bottom: 3px solid var(--main-color); }
-        .table-badge { background: var(--main-color); color: white; padding: 5px 15px; border-radius: 20px; font-size: 14px; }
-
-        .category-bar {
-            display: flex; overflow-x: auto; padding: 15px; background: #ffffff; gap: 12px; 
-            position: sticky; top: 0; z-index: 100; box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-        }
-        .category-bar::-webkit-scrollbar { display: none; }
-        .cat {
-            min-width: 85px; padding: 10px; background: #fff; border-radius: 15px;
-            display: flex; flex-direction: column; align-items: center; border: 1px solid #eee;
-        }
-        .cat.active { background: var(--main-color); color: white; }
-
+        /* المنتجات */
         .container { padding: 15px; margin-bottom: 120px; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 15px; }
-        .card { background: #fff; border-radius: 20px; padding: 10px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.03); cursor: pointer; }
-        .card img { width: 100%; height: 130px; object-fit: cover; border-radius: 15px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 15px; }
+        .card { background: white; border-radius: 20px; padding: 10px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.03); }
+        .card img { width: 100%; height: 120px; object-fit: cover; border-radius: 15px; }
 
         /* السلة */
-        .cart-panel {
-            position: fixed; bottom: -100%; left: 0; width: 100%; height: 85vh;
-            background: #fff; box-shadow: 0 -10px 30px rgba(0,0,0,0.1);
-            padding: 20px; transition: 0.5s ease; z-index: 1000;
-            display: flex; flex-direction: column; border-radius: 30px 30px 0 0;
-        }
+        .cart-panel { position: fixed; bottom: -100%; left: 0; width: 100%; height: 85vh; background: white; padding: 20px; transition: 0.5s; z-index: 1000; display: flex; flex-direction: column; border-radius: 30px 30px 0 0; box-shadow: 0 -10px 30px rgba(0,0,0,0.1); }
         .cart-panel.show { bottom: 0; }
         #cartList { flex: 1; overflow-y: auto; margin: 15px 0; }
 
-        /* تصميم عنصر السلة الجديد */
-        .cart-item {
-            background: #fdfdfd; border-radius: 18px; padding: 15px;
-            margin-bottom: 15px; border: 1px solid #eee;
-        }
-        .item-main-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
-        
-        .details-badge {
-            font-size: 12px; color: #555; background: #f0f0f0; padding: 10px; 
-            border-radius: 12px; line-height: 1.6; border-right: 4px solid var(--main-color);
-        }
+        /* عنصر السلة - التفاصيل */
+        .cart-item { background: #fff; border-radius: 18px; padding: 15px; margin-bottom: 15px; border: 1px solid #eee; }
+        .item-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .details-box { background: #f9f9f9; padding: 12px; border-radius: 12px; border-right: 4px solid var(--main); font-size: 12px; color: #555; line-height: 1.6; }
 
-        .btn-main { width: 100%; padding: 16px; border-radius: 15px; border: none; font-weight: bold; cursor: pointer; font-size: 16px; }
-        .cart-btn-float { 
-            position: fixed; bottom: 20px; left: 20px; right: 20px; 
-            background: var(--main-color); color: white; padding: 18px; 
-            border-radius: 20px; display: flex; justify-content: space-between; 
-            z-index: 500; border: none; font-weight: bold;
-        }
+        /* الأزرار */
+        .btn-main { width: 100%; padding: 16px; border-radius: 15px; border: none; font-weight: bold; font-size: 16px; cursor: pointer; }
+        .float-btn { position: fixed; bottom: 20px; left: 20px; right: 20px; background: var(--main); color: white; padding: 18px; border-radius: 20px; display: flex; justify-content: space-between; z-index: 500; font-weight: bold; border: none; }
 
+        /* المودال */
         .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: none; justify-content: center; align-items: flex-end; z-index: 2000; }
         .modal.show { display: flex; }
-        .modal-box { background: #fff; width: 100%; max-width: 500px; border-radius: 30px 30px 0 0; padding: 25px; }
+        .modal-box { background: white; width: 100%; max-width: 500px; border-radius: 30px 30px 0 0; padding: 25px; }
     </style>
 </head>
 <body>
 
 <div class="header">
-    <h1 style="margin:0; font-size: 24px; color: var(--main-color);">SWEET & SALT</h1>
-    <span class="table-badge">طاولة رقم 1</span>
+    <h2 style="margin:0; color: var(--main);">SWEET & SALT</h2>
+    <span class="table-no">طاولة رقم 1</span>
 </div>
 
 <div class="category-bar">
@@ -94,37 +66,38 @@
     <div id="grid" class="grid"></div>
 </div>
 
-<div class="modal" id="modal" onclick="if(event.target==this) closeModal()">
+<div class="modal" id="modal">
     <div class="modal-box">
         <video id="video" controls style="width:100%; border-radius:20px;"></video>
-        <h2 id="title" style="margin-top:15px; color: var(--main-color);"></h2>
-        <p id="modalPrice" style="font-size: 18px; font-weight: bold;"></p>
-        <button id="actionBtn" class="btn-main" onclick="toggleCartItem()" style="color: white;"></button>
-        <button class="btn-main" style="background:#f1f1f1; margin-top:10px; color:#555;" onclick="closeModal()">إغلاق</button>
+        <h2 id="title" style="margin:15px 0 5px;"></h2>
+        <p id="modalPrice" style="font-weight:bold; color:var(--main);"></p>
+        <button id="actionBtn" class="btn-main" onclick="toggleCartItem()" style="color:white;"></button>
+        <button class="btn-main" style="background:#eee; margin-top:10px;" onclick="closeModal()">إغلاق</button>
     </div>
 </div>
 
-<button class="cart-btn-float" onclick="toggleCartPanel()">
-    <span><i class="fa-solid fa-basket-shopping"></i> السلة (<span id="cartCount">0</span>)</span>
+<button class="float-btn" onclick="toggleCartPanel()">
+    <span>السلة (<span id="cartCount">0</span>)</span>
     <span id="cartTotalDisplay">0 دج</span>
 </button>
 
 <div class="cart-panel" id="cartPanel">
-    <div style="display:flex; justify-content:space-between; align-items:center;">
-        <h2 style="margin:0">🛒 طلبياتي</h2>
-        <i class="fa-solid fa-xmark" onclick="toggleCartPanel()" style="font-size: 25px; color:#ccc;"></i>
+    <div style="display:flex; justify-content:space-between;">
+        <h3>🛒 طلبياتي</h3>
+        <i class="fa-solid fa-times" onclick="toggleCartPanel()" style="font-size:25px;"></i>
     </div>
     <div id="cartList"></div>
-    <div style="border-top: 2px solid #eee; padding-top: 15px;">
-        <div style="display:flex; justify-content:space-between; font-size: 20px; font-weight: bold; margin-bottom: 15px;">
-            <span>الإجمالي:</span>
+    <div style="border-top:2px solid #eee; padding-top:15px;">
+        <div style="display:flex; justify-content:space-between; font-size:20px; font-weight:bold; margin-bottom:15px;">
+            <span>المجموع:</span>
             <span id="cartTotal">0 دج</span>
         </div>
-        <button class="btn-main" id="sendBtn" style="background:var(--main-color); color:#fff;" onclick="sendAllToKitchen()">📤 إرسال للمطبخ (طاولة 1)</button>
+        <button class="btn-main" id="sendBtn" style="background:var(--main); color:white;" onclick="sendAllToKitchen()">إرسال للمطبخ</button>
     </div>
 </div>
 
 <script>
+// --- إعدادات Firebase ---
 const firebaseConfig = {
     apiKey: "YOUR_API_KEY",
     authDomain: "restaurant-e323a.firebaseapp.com",
@@ -142,16 +115,15 @@ let currentItem = null;
 function fetchMenu(catName, el) {
     document.querySelectorAll('.cat').forEach(c => c.classList.remove('active'));
     el.classList.add('active');
-    const grid = document.getElementById('grid');
-    grid.innerHTML = "جاري التحميل...";
-
     db.collection("products").where("category", "==", catName).get().then(snap => {
+        const grid = document.getElementById('grid');
         grid.innerHTML = "";
         snap.forEach(doc => {
             const d = doc.data();
+            // نمرر البيانات كاملة للمودال
             grid.innerHTML += `
                 <div class="card" onclick='openModal(${JSON.stringify(d)})'>
-                    <img src="${d.img || 'https://via.placeholder.com/150'}">
+                    <img src="${d.img || ''}">
                     <h3>${d.name}</h3>
                     <p>${d.price} دج</p>
                 </div>`;
@@ -175,20 +147,23 @@ function closeModal() {
 
 function toggleCartItem() {
     const idx = cart.findIndex(i => i.name === currentItem.name);
-    if(idx === -1) cart.push(currentItem);
-    else cart.splice(idx, 1);
+    if(idx === -1) {
+        // نأخذ نسخة كاملة من الكائن لضمان وجود المكونات والفوائد
+        cart.push({...currentItem});
+    } else {
+        cart.splice(idx, 1);
+    }
     updateModalButton();
     renderCart();
 }
 
 function updateModalButton() {
-    const btn = document.getElementById('actionBtn');
     const inCart = cart.some(i => i.name === currentItem.name);
-    btn.innerText = inCart ? "إزالة من السلة" : "إضافة للطلب";
+    const btn = document.getElementById('actionBtn');
+    btn.innerText = inCart ? "إزالة" : "إضافة للطلب";
     btn.style.background = inCart ? "#333" : "#27ae60";
 }
 
-// --- الدالة المصححة لعرض المكونات والفوائد ---
 function renderCart() {
     const list = document.getElementById('cartList');
     let total = 0;
@@ -197,29 +172,22 @@ function renderCart() {
     cart.forEach((item, idx) => {
         total += parseInt(item.price);
         
-        // فحص البيانات: إذا كانت مصفوفة نحولها لنص، وإذا لم تكن موجودة نضع نصاً بديلاً
-        let ingredientsText = "غير متوفر";
-        if (item.ingredients) {
-            ingredientsText = Array.isArray(item.ingredients) ? item.ingredients.join('، ') : item.ingredients;
-        }
-
-        let benefitsText = "غير متوفر";
-        if (item.benefits) {
-            benefitsText = Array.isArray(item.benefits) ? item.benefits.join('، ') : item.benefits;
-        }
+        // فحص دقيق للبيانات
+        const ing = item.ingredients ? (Array.isArray(item.ingredients) ? item.ingredients.join('، ') : item.ingredients) : "لم تدرج مكونات";
+        const ben = item.benefits ? (Array.isArray(item.benefits) ? item.benefits.join('، ') : item.benefits) : "لم تدرج فوائد";
 
         list.innerHTML += `
             <div class="cart-item">
-                <div class="item-main-info">
-                    <div style="padding-right:10px;">
+                <div class="item-info">
+                    <div>
                         <h4 style="margin:0">${item.name}</h4>
-                        <b style="color:var(--main-color)">${item.price} دج</b>
+                        <b style="color:var(--main)">${item.price} دج</b>
                     </div>
-                    <i class="fa-solid fa-trash-can" style="color:#ff4757; cursor:pointer;" onclick="removeItem(${idx})"></i>
+                    <i class="fa-solid fa-trash" style="color:#ff4757" onclick="removeItem(${idx})"></i>
                 </div>
-                <div class="details-badge">
-                    <div><b>🧾 المكونات:</b> ${ingredientsText}</div>
-                    <div style="margin-top:5px;"><b>💪 الفوائد:</b> ${benefitsText}</div>
+                <div class="details-box">
+                    <div><b>🧾 المكونات:</b> ${ing}</div>
+                    <div style="margin-top:5px;"><b>💪 الفوائد:</b> ${ben}</div>
                 </div>
             </div>`;
     });
@@ -240,11 +208,10 @@ function toggleCartPanel() {
 }
 
 function sendAllToKitchen() {
-    if(cart.length === 0) return alert("السلة فارغة!");
+    if(cart.length === 0) return alert("السلة فارغة");
     const btn = document.getElementById('sendBtn');
     btn.disabled = true;
-    btn.innerText = "جاري الإرسال...";
-
+    
     db.collection("menu").add({
         tableNumber: 1,
         items: cart.map(i => ({
@@ -257,12 +224,11 @@ function sendAllToKitchen() {
         total: cart.reduce((s, i) => s + parseInt(i.price), 0),
         timestamp: firebase.firestore.FieldValue.serverTimestamp()
     }).then(() => {
-        alert("✅ تم الإرسال للطاولة 1");
+        alert("تم الإرسال!");
         cart = [];
         renderCart();
         toggleCartPanel();
         btn.disabled = false;
-        btn.innerText = "📤 إرسال للمطبخ (طاولة 1)";
     });
 }
 
