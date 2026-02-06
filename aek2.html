@@ -21,14 +21,12 @@
         
         body { background: var(--bg); color: #2c3e50; direction: rtl; }
 
-        /* Header */
         .nav-header {
             background: linear-gradient(135deg, var(--primary) 0%, #6b0000 100%);
             color: white; padding: 15px 20px; position: sticky; top: 0; z-index: 1000;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
 
-        /* Categories */
         .category-bar {
             display: flex; gap: 12px; padding: 15px; overflow-x: auto; background: white;
             position: sticky; top: 55px; z-index: 900;
@@ -39,17 +37,16 @@
         }
         .cat-item.active { background: var(--primary); color: white; }
 
-        /* Grid */
         .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 15px; margin-bottom: 80px; }
         .card { background: white; border-radius: var(--radius); overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
         .card img { width: 100%; height: 120px; object-fit: cover; }
         .card-body { padding: 10px; text-align: center; }
         .card-price { color: var(--primary); font-weight: 700; margin-top: 5px; }
 
-        /* Modal Overlay */
         .overlay {
             position: fixed; inset: 0; background: rgba(0,0,0,0.8);
             display: none; z-index: 9999; justify-content: center; align-items: flex-end;
+            backdrop-filter: blur(5px);
         }
         .overlay.show { display: flex; }
         .content-panel {
@@ -58,32 +55,13 @@
         }
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
 
-        /* Media Container (The Solution) */
+        /* تعديل منطقة الفيديو لتكون مباشرة وبسيطة */
         .media-box {
-            position: relative; width: 100%; height: 250px; 
+            width: 100%; height: 230px; 
             background: #000; border-radius: 15px; overflow: hidden; margin-bottom: 15px;
         }
-        .media-item { width: 100%; height: 100%; object-fit: cover; position: absolute; top: 0; left: 0; }
-        #dishVideo { z-index: 2; display: none; } /* الفيديو مخفي افتراضياً */
-        #dishImage { z-index: 1; display: block; } /* الصورة ظاهرة افتراضياً */
+        #dishVideo { width: 100%; height: 100%; object-fit: cover; display: block; }
 
-        .play-btn-overlay {
-            position: absolute; inset: 0; z-index: 3;
-            display: flex; align-items: center; justify-content: center;
-            background: rgba(0,0,0,0.2); cursor: pointer;
-        }
-        .play-icon {
-            width: 60px; height: 60px; background: var(--primary); color: white;
-            border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px;
-        }
-
-        .close-vid {
-            position: absolute; top: 10px; right: 10px; z-index: 4;
-            background: rgba(0,0,0,0.6); color: white; border: none;
-            width: 30px; height: 30px; border-radius: 50%; display: none;
-        }
-
-        /* Buttons */
         .btn-action {
             width: 100%; padding: 15px; border: none; border-radius: 15px;
             font-size: 1rem; font-weight: 700; cursor: pointer; margin-top: 10px;
@@ -96,6 +74,7 @@
             border-radius: 50px; display: flex; justify-content: space-between;
             box-shadow: 0 10px 20px rgba(139,0,0,0.3); z-index: 1000;
         }
+        .close-icon { position: absolute; top: 15px; left: 15px; font-size: 24px; color: #999; cursor: pointer; z-index: 10; }
     </style>
 </head>
 <body>
@@ -114,25 +93,17 @@
 
 <div class="overlay" id="dishModal">
     <div class="content-panel">
-        <i class="fas fa-times-circle" style="position:absolute; top:15px; left:15px; font-size:24px; color:#ccc;" onclick="closeModal()"></i>
+        <i class="fas fa-times-circle close-icon" onclick="closeModal()"></i>
         
         <div class="media-box">
-            <img id="dishImage" class="media-item" src="">
-            
-            <div id="playOverlay" class="play-btn-overlay" onclick="handlePlay()">
-                <div class="play-icon"><i class="fas fa-play"></i></div>
-            </div>
-
-            <video id="dishVideo" class="media-item" controls playsinline></video>
-            
-            <button id="closeVidBtn" class="close-vid" onclick="handleStop()"><i class="fas fa-times"></i></button>
+            <video id="dishVideo" controls playsinline></video>
         </div>
 
         <h2 id="modalTitle">اسم الطبق</h2>
         <p id="modalPrice" style="color:var(--primary); font-size: 1.5rem; font-weight: 800;"></p>
         
         <div style="background:#f9f9f9; padding:15px; border-radius:10px; margin:15px 0;">
-            <p><strong>المكونات:</strong> <span id="modalIng"></span></p>
+            <p id="modalIngBox"><strong>المكونات:</strong> <span id="modalIng"></span></p>
         </div>
 
         <button class="btn-action btn-add" onclick="toggleCart()">إضافة للطلب</button>
@@ -145,7 +116,6 @@
 </div>
 
 <script>
-// --- إعدادات Firebase ---
 const firebaseConfig = {
     apiKey: "AIzaSy...",
     authDomain: "restaurant-e323a.firebaseapp.com",
@@ -157,7 +127,6 @@ const db = firebase.firestore();
 let currentItem = null;
 let cart = [];
 
-// --- جلب البيانات ---
 function loadDishes(cat, el) {
     if(el) {
         document.querySelectorAll('.cat-item').forEach(i => i.classList.remove('active'));
@@ -169,8 +138,9 @@ function loadDishes(cat, el) {
         grid.innerHTML = "";
         snap.forEach(doc => {
             const data = doc.data();
+            const itemJSON = JSON.stringify(data).replace(/'/g, "&apos;");
             grid.innerHTML += `
-                <div class="card" onclick='openModal(${JSON.stringify(data)})'>
+                <div class="card" onclick='openModal(${itemJSON})'>
                     <img src="${data.img}">
                     <div class="card-body">
                         <h4>${data.name}</h4>
@@ -181,77 +151,26 @@ function loadDishes(cat, el) {
     });
 }
 
-// --- فتح المودال ---
 function openModal(item) {
     currentItem = item;
     document.getElementById('modalTitle').innerText = item.name;
     document.getElementById('modalPrice').innerText = item.price + " دج";
     document.getElementById('modalIng').innerText = item.ingredients || "طبيعي";
     
-    // إعادة ضبط الحالة (صورة فقط)
-    const img = document.getElementById('dishImage');
     const vid = document.getElementById('dishVideo');
-    const play = document.getElementById('playOverlay');
-    const closeV = document.getElementById('closeVidBtn');
-
-    img.src = item.img;
-    img.style.display = "block";
-    vid.style.display = "none";
-    vid.pause();
-    vid.src = ""; // تفريغ الفيديو القديم تماماً
     
-    closeV.style.display = "none";
-
-    // إذا كان هناك فيديو، نجهز زر التشغيل
-    if(item.video && item.video.trim() !== "") {
-        play.style.display = "flex";
-        play.dataset.url = item.video;
-    } else {
-        play.style.display = "none";
-    }
-
+    // وضع رابط الفيديو مباشرة (مثل الكود الناجح)
+    // نضع رابط الصورة كـ Poster في حال لم يعمل الفيديو فوراً
+    vid.src = item.video || "";
+    vid.poster = item.img || ""; 
+    
     document.getElementById('dishModal').classList.add('show');
 }
 
-// --- تشغيل الفيديو (الأمر الصارم) ---
-function handlePlay() {
-    const img = document.getElementById('dishImage');
-    const vid = document.getElementById('dishVideo');
-    const play = document.getElementById('playOverlay');
-    const closeV = document.getElementById('closeVidBtn');
-    
-    // 1. إخفاء كل شيء متعلق بالصورة
-    img.style.display = "none";
-    play.style.display = "none";
-    
-    // 2. تفعيل الفيديو
-    vid.style.display = "block";
-    vid.src = play.dataset.url;
-    vid.load(); // إجبار المتصفح على التعرف على الملف
-    vid.play();
-    
-    // 3. إظهار زر الإغلاق الخاص بالفيديو
-    closeV.style.display = "block";
-}
-
-// --- إيقاف الفيديو ---
-function handleStop() {
-    const img = document.getElementById('dishImage');
-    const vid = document.getElementById('dishVideo');
-    const play = document.getElementById('playOverlay');
-    const closeV = document.getElementById('closeVidBtn');
-
-    vid.pause();
-    vid.src = "";
-    vid.style.display = "none";
-    
-    img.style.display = "block";
-    play.style.display = "flex";
-    closeV.style.display = "none";
-}
-
 function closeModal() {
-    handleStop();
+    const vid = document.getElementById('dishVideo');
+    vid.pause();
+    vid.src = ""; // تفريغ المصدر لضمان التوقف التام
     document.getElementById('dishModal').classList.remove('show');
 }
 
@@ -263,7 +182,6 @@ function toggleCart() {
     closeModal();
 }
 
-// البدء
 loadDishes('طعام');
 </script>
 </body>
