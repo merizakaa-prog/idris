@@ -1,112 +1,115 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Sweet & Salt | Menu</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+    
     <style>
-        /* --- تحسينات الفيديو الاحترافية --- */
-        .video-container {
-            position: relative;
-            width: 100%;
-            height: 250px;
-            background: #000;
-            border-radius: 25px;
-            overflow: hidden;
-            margin-bottom: 15px;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
-        }
+        :root { --main: #8b0000; --accent: #27ae60; --bg: #f4f7f6; }
+        body { margin:0; font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); direction: rtl; overflow-x: hidden; }
 
-        /* جعل الفيديو يملأ الحاوية بشكل متناسق */
-        video#dishVideo {
-            width: 100%;
-            height: 100%;
-            object-fit: cover; /* لضمان ملء المساحة بالكامل مثل تيك توك */
-            display: block;
-        }
+        /* شريط الأقسام */
+        .category-bar { display: flex; gap: 12px; padding: 15px; overflow-x: auto; background: #fff; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .cat-item { min-width: 90px; padding: 12px; background: #eee; border-radius: 18px; text-align: center; cursor: pointer; font-weight: 600; color: #666; transition: 0.3s; white-space: nowrap; }
+        .cat-item.active { background: var(--main); color: #fff; transform: translateY(-3px); }
 
-        /* طبقة تظليل جمالية فوق الفيديو */
-        .video-overlay {
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, transparent 40%, rgba(0,0,0,0.5) 100%);
-            pointer-events: none; /* للسماح بالنقر على الفيديو نفسه */
-            z-index: 1;
-        }
+        /* شبكة المنتجات */
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 15px; padding: 15px; margin-bottom: 120px; }
+        .card { background: #fff; border-radius: 20px; padding: 10px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.05); cursor: pointer; transition: 0.3s; }
+        .card img { width: 100%; height: 130px; object-fit: cover; border-radius: 15px; background: #eee; }
 
-        /* أيقونة تشغيل تظهر في البداية */
-        .play-hint {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: rgba(139, 0, 0, 0.85);
-            color: white;
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 20px;
-            z-index: 2;
-            animation: pulse 2s infinite;
-            cursor: pointer;
-        }
+        /* المودال */
+        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: none; z-index: 2000; backdrop-filter: blur(5px); justify-content: center; align-items: flex-end; }
+        .overlay.show { display: flex; }
+        .content-panel { background: #fff; width: 100%; max-width: 500px; border-radius: 30px 30px 0 0; padding: 25px; box-sizing: border-box; position: relative; animation: slideUp 0.4s ease-out; }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
 
-        @keyframes pulse {
-            0% { box-shadow: 0 0 0 0 rgba(139, 0, 0, 0.7); }
-            70% { box-shadow: 0 0 0 15px rgba(139, 0, 0, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(139, 0, 0, 0); }
-        }
+        /* حاوية الفيديو الاحترافية */
+        .video-container { position: relative; width: 100%; height: 230px; background: #000; border-radius: 20px; overflow: hidden; margin-bottom: 15px; }
+        #dishVideo { width: 100%; height: 100%; object-fit: cover; }
+        .play-hint { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(139, 0, 0, 0.8); color: white; width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; pointer-events: none; transition: 0.3s; }
+        .video-playing .play-hint { opacity: 0; }
 
-        /* إخفاء أيقونة التشغيل بمجرد بدء الفيديو */
-        .video-playing .play-hint, 
-        .video-playing .video-overlay {
-            opacity: 0;
-            visibility: hidden;
-            transition: 0.5s;
-        }
-
-        /* تحسين شكل المودال */
-        .content-panel {
-            border-radius: 35px 35px 0 0 !important;
-            box-shadow: 0 -10px 40px rgba(0,0,0,0.3);
-        }
+        .details-box { background: #f9f9f9; padding: 15px; border-radius: 15px; margin: 15px 0; font-size: 14px; border-right: 5px solid var(--main); text-align: right; }
+        .btn-main { width: 100%; padding: 18px; border: none; border-radius: 20px; font-weight: bold; background: var(--main); color: white; cursor: pointer; }
+        .close-icon { position: absolute; top: 15px; left: 20px; font-size: 25px; color: #999; cursor: pointer; z-index: 10; }
+        
+        .float-btn { position: fixed; bottom: 25px; left: 20px; right: 20px; background: var(--main); color: #fff; padding: 20px; border-radius: 22px; display: flex; justify-content: space-between; z-index: 500; border:none; font-weight: bold; }
     </style>
 </head>
 <body>
 
+<div class="category-bar" id="catBar">
+    <div class="cat-item active" onclick="changeCat('طعام', this)">🍽️ طعام</div>
+    <div class="cat-item" onclick="changeCat('مشروبات', this)">🥤 مشروبات</div>
+    <div class="cat-item" onclick="changeCat('تحلية', this)">🍰 تحلية</div>
+</div>
+
+<div id="grid" class="grid"></div>
+
 <div class="overlay" id="dishOverlay">
     <div class="content-panel">
-        <i class="fa-solid fa-circle-xmark close-icon" onclick="closeModal('dishOverlay')" 
-           style="top: -15px; left: 50%; transform: translateX(-50%); font-size: 35px; color: #fff; background: var(--main); border-radius: 50%;"></i>
+        <i class="fa-solid fa-circle-xmark close-icon" onclick="closeModal('dishOverlay')"></i>
         
-        <div class="video-container" id="vidCont">
-            <div class="video-overlay"></div>
-            <div class="play-hint" id="playHint"><i class="fas fa-play"></i></div>
-            
-            <video id="dishVideo" 
-                   playsinline 
-                   preload="metadata"
-                   onclick="togglePlay()">
-            </video>
+        <div class="video-container" id="vidCont" onclick="togglePlay()">
+            <div class="play-hint"><i class="fas fa-play"></i></div>
+            <video id="dishVideo" playsinline></video>
         </div>
 
-        <h2 id="dishName" style="margin:10px 0; text-align: center;"></h2>
-        <p id="dishPrice" style="color:var(--main); font-weight:900; font-size:26px; text-align: center;"></p>
+        <h2 id="dishName" style="margin:5px 0; text-align:center;"></h2>
+        <p id="dishPrice" style="color:var(--main); font-weight:bold; font-size:24px; text-align:center;"></p>
         
         <div class="details-box">
             <div id="dishIng"></div>
             <div id="dishBen" style="margin-top:8px; color: var(--accent); font-weight: 600;"></div>
         </div>
 
-        <button id="addBtn" class="btn-main" onclick="handleCartAction()" style="background:var(--main); color:#fff; border-radius: 20px;">
+        <button id="addBtn" class="btn-main" onclick="handleCartAction()">
             <span id="addBtnText">إضافة للطلب 🛒</span>
-            <div class="spinner" id="addSpinner"></div>
         </button>
     </div>
 </div>
 
+<button class="float-btn">
+    <span>الطلبات (<span id="cartCount">0</span>)</span>
+    <span id="floatTotal">0 دج</span>
+</button>
+
 <script>
-// --- نفس دالة جلب البيانات السابقة ---
+// --- تكوين Firebase (استخدم بياناتك الحقيقية هنا) ---
+const firebaseConfig = { 
+    apiKey: "AIzaSy...", 
+    authDomain: "restaurant-e323a.firebaseapp.com", 
+    projectId: "restaurant-e323a" 
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+let cart = [];
+let currentItem = null;
+
+// دالة جلب الأطباق - تم إصلاحها لضمان الظهور
+function fetchDishes(category) {
+    db.collection("dishes").where("category", "==", category).onSnapshot(snap => {
+        const gridElement = document.getElementById('grid');
+        gridElement.innerHTML = ""; // مسح الشبكة قبل الإضافة
+        snap.forEach(doc => {
+            const d = doc.data();
+            // تحويل البيانات لنص JSON آمن للإرسال للمودال
+            const itemJSON = JSON.stringify(d).replace(/'/g, "&apos;");
+            gridElement.innerHTML += `
+                <div class="card" onclick='openModal(${itemJSON})'>
+                    <img src="${d.img || ''}">
+                    <h4>${d.name}</h4>
+                    <p style="color:var(--main); font-weight:bold;">${d.price} دج</p>
+                </div>`;
+        });
+    });
+}
 
 function openModal(item) {
     currentItem = item;
@@ -114,34 +117,26 @@ function openModal(item) {
     document.getElementById('dishPrice').innerText = item.price + " دج";
     
     const v = document.getElementById('dishVideo');
-    const cont = document.getElementById('vidCont');
-    
-    // 1. إعادة تعيين شكل الحاوية
-    cont.classList.remove('video-playing');
-    
-    // 2. ضبط الفيديو (استخدام الصورة كغلاف Poster)
     v.src = item.video || "";
-    v.poster = item.img || ""; // تظهر الصورة كخلفية احترافية للفيديو
-    v.load(); 
+    v.poster = item.img || ""; // تعيين الصورة كغلاف للفيديو
+    v.load();
+    
+    document.getElementById('vidCont').classList.remove('video-playing');
 
-    // 3. المكونات والفوائد
     const ingredients = Array.isArray(item.ingredients) ? item.ingredients.join('، ') : (item.ingredients || 'طبيعية');
     const benefits = Array.isArray(item.benefits) ? item.benefits.join('، ') : (item.benefits || 'صحية وغنية');
-    document.getElementById('dishIng').innerHTML = `<i class="fas fa-leaf"></i> <b>المكونات:</b> ${ingredients}`;
-    document.getElementById('dishBen').innerHTML = `<i class="fas fa-star"></i> <b>الفوائد:</b> ${benefits}`;
+    document.getElementById('dishIng').innerHTML = `<b>المكونات:</b> ${ingredients}`;
+    document.getElementById('dishBen').innerHTML = `<b>الفوائد:</b> ${benefits}`;
 
-    // 4. تحديث حالة الزر
     const isInCart = cart.some(i => i.name === item.name);
     document.getElementById('addBtnText').innerText = isInCart ? "إزالة من الطلب ❌" : "إضافة للطلب 🛒";
     
     document.getElementById('dishOverlay').classList.add('show');
 }
 
-// دالة لتشغيل/إيقاف الفيديو بالنقر عليه
 function togglePlay() {
     const v = document.getElementById('dishVideo');
     const cont = document.getElementById('vidCont');
-    
     if (v.paused) {
         v.play();
         cont.classList.add('video-playing');
@@ -151,14 +146,34 @@ function togglePlay() {
     }
 }
 
-function closeModal(id) {
-    document.getElementById(id).classList.remove('show');
-    const v = document.getElementById('dishVideo');
-    v.pause();
-    v.currentTime = 0; // إعادة الفيديو للبداية
+function handleCartAction() {
+    const idx = cart.findIndex(i => i.name === currentItem.name);
+    if(idx > -1) cart.splice(idx, 1);
+    else cart.push(currentItem);
+    
+    updateMainUI();
+    document.getElementById('dishOverlay').classList.remove('show');
 }
 
-// ... (باقي دوال السلة السابقة) ...
+function updateMainUI() {
+    document.getElementById('cartCount').innerText = cart.length;
+    const total = cart.reduce((sum, item) => sum + parseInt(item.price || 0), 0);
+    document.getElementById('floatTotal').innerText = total + " دج";
+}
+
+function closeModal(id) {
+    document.getElementById(id).classList.remove('show');
+    document.getElementById('dishVideo').pause();
+}
+
+function changeCat(cat, el) {
+    document.querySelectorAll('.cat-item').forEach(i => i.classList.remove('active'));
+    el.classList.add('active');
+    fetchDishes(cat);
+}
+
+// التشغيل الأول
+window.onload = () => fetchDishes('طعام');
 </script>
 </body>
 </html>
