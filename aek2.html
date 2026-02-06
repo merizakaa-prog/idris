@@ -3,10 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sweet & Salt | Premium Menu</title>
+    <title>Sweet & Salt | Table 2</title>
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
     
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
@@ -14,293 +13,239 @@
     <style>
         :root {
             --main: #8b0000;
-            --main-light: #a52a2a;
             --accent: #27ae60;
             --bg: #f8fafc;
-            --card-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
         }
 
         body {
             margin: 0;
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            font-family: 'Segoe UI', Tahoma, sans-serif;
             background: var(--bg);
             color: #1e293b;
-            padding-top: 70px; /* للـ Header الثابت */
+            direction: rtl;
         }
 
-        /* هيدر عصري */
+        /* Header */
         header {
-            position: fixed;
-            top: 0; left: 0; right: 0;
-            background: rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(12px);
-            height: 60px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 20px;
+            background: var(--main);
+            color: white;
+            padding: 15px;
+            text-align: center;
+            font-weight: bold;
+            position: sticky;
+            top: 0;
             z-index: 1000;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
 
-        .brand { font-weight: 800; color: var(--main); font-size: 1.2rem; }
-        .table-badge { background: var(--main); color: white; padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; }
-
-        /* شريط الأقسام */
+        /* Categories */
         .category-bar {
             display: flex;
             gap: 10px;
             padding: 15px;
             overflow-x: auto;
-            scrollbar-width: none;
-            background: var(--bg);
+            background: #fff;
+            border-bottom: 1px solid #e2e8f0;
         }
-        .category-bar::-webkit-scrollbar { display: none; }
-        
         .cat-item {
-            padding: 10px 20px;
-            background: white;
-            border-radius: 14px;
+            padding: 8px 20px;
+            background: #f1f5f9;
+            border-radius: 20px;
             white-space: nowrap;
+            cursor: pointer;
             font-weight: 600;
-            color: #64748b;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-            border: 1px solid #f1f5f9;
+            transition: 0.3s;
         }
         .cat-item.active {
             background: var(--main);
             color: white;
-            transform: scale(1.05);
-            box-shadow: 0 10px 15px -3px rgba(139, 0, 0, 0.3);
         }
 
-        /* شبكة المنتجات */
+        /* Products Grid */
         .grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 16px;
-            padding: 16px;
+            gap: 15px;
+            padding: 15px;
             margin-bottom: 100px;
         }
-
         .card {
             background: white;
-            border-radius: 24px;
+            border-radius: 15px;
             overflow: hidden;
-            transition: transform 0.2s;
-            box-shadow: var(--card-shadow);
-            position: relative;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            text-align: center;
+            padding-bottom: 10px;
         }
-        .card:active { transform: scale(0.96); }
-
-        .card-img-wrapper {
-            position: relative;
-            height: 140px;
-            overflow: hidden;
-        }
-        .card img { width: 100%; height: 100%; object-fit: cover; }
-        
-        .price-tag {
-            position: absolute;
-            bottom: 10px; left: 10px;
-            background: rgba(255, 255, 255, 0.95);
-            padding: 4px 10px;
-            border-radius: 10px;
-            font-weight: 800;
-            color: var(--main);
-            font-size: 0.9rem;
+        .card img {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
         }
 
-        .card-info { padding: 12px; text-align: center; }
-        .card-info h4 { margin: 0; font-size: 1rem; color: #334155; }
-
-        /* نافذة المودال */
+        /* Modal / Popups */
         .overlay {
             position: fixed;
             inset: 0;
-            background: rgba(15, 23, 42, 0.8);
-            backdrop-filter: blur(8px);
+            background: rgba(0,0,0,0.8);
             display: none;
             z-index: 2000;
             justify-content: center;
             align-items: flex-end;
         }
         .overlay.show { display: flex; }
-
         .content-panel {
             background: white;
             width: 100%;
             max-width: 500px;
-            border-radius: 32px 32px 0 0;
-            padding: 24px;
+            border-radius: 25px 25px 0 0;
+            padding: 20px;
             position: relative;
-            animation: slideUp 0.4s cubic-bezier(0, 0, 0.2, 1);
         }
 
-        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-
-        .video-container {
+        .video-box {
             width: 100%;
-            height: 250px;
+            height: 200px;
             background: #000;
-            border-radius: 20px;
+            border-radius: 15px;
+            margin-bottom: 15px;
             overflow: hidden;
-            margin-bottom: 20px;
-            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1);
         }
 
-        .btn-action {
+        /* Buttons */
+        .btn-main {
             width: 100%;
-            padding: 16px;
-            border-radius: 18px;
+            padding: 15px;
             border: none;
-            font-size: 1.1rem;
-            font-weight: 700;
+            border-radius: 12px;
+            font-weight: bold;
+            font-size: 16px;
             cursor: pointer;
-            transition: 0.3s;
+            margin-top: 10px;
         }
+        .btn-add { background: var(--main); color: white; }
+        .btn-send { background: var(--accent); color: white; }
 
-        .btn-confirm { background: var(--main); color: white; }
-        .btn-confirm:disabled { opacity: 0.6; }
-
-        /* سلة المشتريات العائمة */
         .floating-cart {
             position: fixed;
             bottom: 20px; left: 20px; right: 20px;
             background: var(--main);
             color: white;
-            padding: 16px 24px;
-            border-radius: 20px;
+            padding: 15px 20px;
+            border-radius: 15px;
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 20px 25px -5px rgba(139, 0, 0, 0.4);
-            z-index: 1500;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+            cursor: pointer;
+        }
+        
+        .close-btn {
+            position: absolute;
+            top: 10px; left: 10px;
+            font-size: 24px;
+            color: #64748b;
             cursor: pointer;
         }
     </style>
 </head>
 <body>
 
-<header>
-    <div class="brand">Sweet & Salt</div>
-    <div class="table-badge">طاولة رقم 2</div>
-</header>
+<header>Sweet & Salt - طاولة رقم 2</header>
 
-<div class="category-bar" id="catBar">
+<div class="category-bar">
     <div class="cat-item active" onclick="changeCat('طعام', this)">🍽️ طعام</div>
     <div class="cat-item" onclick="changeCat('مشروبات', this)">🥤 مشروبات</div>
     <div class="cat-item" onclick="changeCat('تحلية', this)">🍰 تحلية</div>
-    <div class="cat-item" onclick="changeCat('قاطو', this)">🍪 قاطو</div>
 </div>
 
-<div id="grid" class="grid">
-    </div>
+<div id="grid" class="grid"></div>
 
 <div class="overlay" id="dishOverlay">
     <div class="content-panel">
-        <div style="width: 40px; height: 4px; background: #e2e8f0; margin: 0 auto 20px; border-radius: 10px;" onclick="closeModal('dishOverlay')"></div>
-        
-        <div class="video-container">
-            <video id="dishVideo" controls playsinline style="width: 100%; height: 100%; object-fit: cover;"></video>
+        <span class="close-btn" onclick="closeModal('dishOverlay')">&times;</span>
+        <div class="video-box">
+            <video id="dishVideo" controls playsinline style="width:100%; height:100%;"></video>
         </div>
-
-        <h2 id="dishName" style="margin:0 0 8px 0;"></h2>
-        <div id="dishMeta" style="margin-bottom: 20px;">
-            <span id="dishPrice" style="color: var(--main); font-weight: 900; font-size: 1.5rem;"></span>
-        </div>
-        
-        <div style="background: #f1f5f9; padding: 15px; border-radius: 16px; margin-bottom: 25px;">
-            <p id="dishIng" style="font-size: 0.9rem; margin: 0 0 8px 0; color: #475569;"></p>
-            <p id="dishBen" style="font-size: 0.9rem; margin: 0; color: var(--accent); font-weight: 600;"></p>
-        </div>
-
-        <button id="addBtn" class="btn-action btn-confirm" onclick="handleCartAction()">إضافة للطلب</button>
+        <h2 id="dishName"></h2>
+        <h3 id="dishPrice" style="color:var(--main)"></h3>
+        <p id="dishIng" style="color:#64748b; font-size:14px;"></p>
+        <button id="addBtn" class="btn-main btn-add" onclick="toggleCart()"></button>
     </div>
 </div>
 
 <div class="overlay" id="cartOverlay">
     <div class="content-panel">
-        <h3 style="text-align: center; margin-bottom: 20px;">📋 طلبات الطاولة 2</h3>
-        <div id="cartItemsList" style="max-height: 300px; overflow-y: auto; margin-bottom: 20px;"></div>
-        
-        <div style="display: flex; justify-content: space-between; padding: 20px 0; border-top: 2px dashed #e2e8f0;">
-            <span style="font-weight: 700; font-size: 1.2rem;">الإجمالي النهائي</span>
-            <span id="finalTotal" style="font-weight: 900; font-size: 1.2rem; color: var(--main);"></span>
+        <h3 style="text-align:center;">مراجعة الطلب - طاولة 2</h3>
+        <div id="cartList" style="max-height: 250px; overflow-y: auto;"></div>
+        <hr>
+        <div style="display:flex; justify-content:space-between; font-weight:bold; margin: 15px 0;">
+            <span>الإجمالي:</span>
+            <span id="totalPrice">0 دج</span>
         </div>
-
-        <button id="sendBtn" class="btn-action btn-confirm" onclick="sendOrderToKitchen()">إرسال الطلب للمطبخ</button>
-        <button class="btn-action" style="background: none; color: #94a3b8;" onclick="closeModal('cartOverlay')">إلغاء</button>
+        <button id="sendBtn" class="btn-main btn-send" onclick="sendOrder()">تأكيد وإرسال للمطبخ 📤</button>
+        <button class="btn-main" style="background:#e2e8f0;" onclick="closeModal('cartOverlay')">إضافة المزيد</button>
     </div>
 </div>
 
-<div class="floating-cart animate__animated animate__fadeInUp" id="floatCart" onclick="openCart()">
-    <div>
-        <i class="fas fa-shopping-basket"></i>
-        <span style="margin-right: 8px;">الطلبات (<span id="cartCount">0</span>)</span>
-    </div>
+<div class="floating-cart" id="floatCart" style="display:none;" onclick="openCart()">
+    <span>عرض السلة (<span id="cartCount">0</span>)</span>
     <span id="floatTotal">0 دج</span>
 </div>
 
 <script>
 // --- تكوين Firebase ---
 const firebaseConfig = {
-    apiKey: "AIzaSy...", 
+    apiKey: "AIzaSy...", // استبدلها بمفتاحك
     authDomain: "restaurant-e323a.firebaseapp.com",
-    projectId: "restaurant-e323a"
+    projectId: "restaurant-e323a",
+    storageBucket: "restaurant-e323a.appspot.com",
+    messagingSenderId: "309092455734",
+    appId: "..."
 };
+
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
 let cart = [];
 let currentItem = null;
 
-// جلب الأطباق (نظام الصور لتوفير الأداء)
-function fetchDishes(category) {
-    db.collection("dishes").where("category", "==", category).onSnapshot(snap => {
+// 1. جلب البيانات
+function fetchDishes(cat) {
+    db.collection("dishes").where("category", "==", cat).onSnapshot(snap => {
         const grid = document.getElementById('grid');
         grid.innerHTML = "";
         snap.forEach(doc => {
             const d = doc.data();
-            const itemJSON = JSON.stringify(d).replace(/'/g, "&apos;");
+            const itemStr = JSON.stringify(d).replace(/'/g, "&apos;");
             grid.innerHTML += `
-                <div class="card animate__animated animate__fadeIn" onclick='openModal(${itemJSON})'>
-                    <div class="card-img-wrapper">
-                        <img src="${d.img || ''}" alt="${d.name}">
-                        <div class="price-tag">${d.price} دج</div>
-                    </div>
-                    <div class="card-info">
-                        <h4>${d.name}</h4>
-                    </div>
+                <div class="card" onclick='openDetails(${itemStr})'>
+                    <img src="${d.img || ''}">
+                    <h4 style="margin:10px 0 5px;">${d.name}</h4>
+                    <p style="color:var(--main); font-weight:bold; margin:0;">${d.price} دج</p>
                 </div>`;
         });
     });
 }
 
-// فتح تفاصيل الطبق (تشغيل فيديو واحد فقط)
-function openModal(item) {
+// 2. فتح التفاصيل
+function openDetails(item) {
     currentItem = item;
     document.getElementById('dishName').innerText = item.name;
     document.getElementById('dishPrice').innerText = item.price + " دج";
+    document.getElementById('dishIng').innerText = "المكونات: " + (item.ingredients || "طبيعية وطازجة");
     
     const v = document.getElementById('dishVideo');
     v.src = item.video || "";
-    v.poster = item.img || "";
     v.load();
 
-    const ing = Array.isArray(item.ingredients) ? item.ingredients.join('، ') : (item.ingredients || 'طبيعية');
-    const ben = Array.isArray(item.benefits) ? item.benefits.join('، ') : (item.benefits || 'صحية وغنية');
-    document.getElementById('dishIng').innerHTML = `<b>المكونات:</b> ${ing}`;
-    document.getElementById('dishBen').innerHTML = `<b>الفوائد:</b> ${ben}`;
-
-    const isInCart = cart.some(i => i.name === item.name);
-    document.getElementById('addBtn').innerText = isInCart ? "إزالة من السلة ❌" : "إضافة للطلب 🛒";
+    const isIn = cart.some(i => i.name === item.name);
+    document.getElementById('addBtn').innerText = isIn ? "إزالة من الطلب ❌" : "إضافة للطلب 🛒";
+    
     document.getElementById('dishOverlay').classList.add('show');
 }
 
-// إدارة السلة
-function handleCartAction() {
+// 3. إضافة/إزالة
+function toggleCart() {
     const idx = cart.findIndex(i => i.name === currentItem.name);
     if(idx > -1) cart.splice(idx, 1);
     else cart.push(currentItem);
@@ -312,27 +257,25 @@ function handleCartAction() {
 function updateUI() {
     const count = cart.length;
     document.getElementById('cartCount').innerText = count;
-    const total = cart.reduce((sum, i) => sum + parseInt(i.price || 0), 0);
+    const total = cart.reduce((s, i) => s + parseInt(i.price || 0), 0);
     document.getElementById('floatTotal').innerText = total + " دج";
     document.getElementById('floatCart').style.display = count > 0 ? 'flex' : 'none';
 }
 
+// 4. السلة
 function openCart() {
-    const list = document.getElementById('cartItemsList');
+    const list = document.getElementById('cartList');
     list.innerHTML = "";
     let total = 0;
     cart.forEach((item, index) => {
         total += parseInt(item.price || 0);
         list.innerHTML += `
-            <div style="display:flex; justify-content:space-between; align-items:center; background:#f8fafc; padding:12px; border-radius:12px; margin-bottom:8px;">
+            <div style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid #eee;">
                 <span>${item.name}</span>
-                <div>
-                    <span style="font-weight:bold; margin-left:10px;">${item.price} دج</span>
-                    <i class="fas fa-trash" style="color:#ef4444;" onclick="removeItem(${index})"></i>
-                </div>
+                <i class="fas fa-trash" style="color:red;" onclick="removeItem(${index})"></i>
             </div>`;
     });
-    document.getElementById('finalTotal').innerText = total + " دج";
+    document.getElementById('totalPrice').innerText = total + " دج";
     document.getElementById('cartOverlay').classList.add('show');
 }
 
@@ -343,27 +286,34 @@ function removeItem(i) {
     else openCart();
 }
 
-// إرسال الطلب (للطاولة 2)
-function sendOrderToKitchen() {
+// 5. إرسال الطلب (إصلاح شامل للطاولة 2)
+function sendOrder() {
     const btn = document.getElementById('sendBtn');
     btn.disabled = true;
     btn.innerText = "جاري الإرسال...";
 
-    const order = {
+    const orderData = {
         items: cart,
         total: cart.reduce((s, i) => s + parseInt(i.price || 0), 0),
-        table: 2,
-        status: "جديد",
+        table: 2,           // رقم الطاولة
+        status: "جديد",     // تأكد أن تطبيق المطبخ يبحث عن كلمة "جديد"
         time: firebase.firestore.FieldValue.serverTimestamp()
     };
 
-    db.collection("menu").add(order).then(() => {
-        alert("✅ تم إرسال طلبك! طاولة 2");
+    // الإرسال لمجموعة "menu"
+    db.collection("menu").add(orderData)
+    .then(() => {
+        alert("✅ تم إرسال طلبك بنجاح للمطبخ (طاولة 2)");
         cart = [];
         updateUI();
         closeModal('cartOverlay');
+    })
+    .catch(err => {
+        alert("❌ خطأ في الإرسال: " + err.message);
+    })
+    .finally(() => {
         btn.disabled = false;
-        btn.innerText = "إرسال الطلب للمطبخ";
+        btn.innerText = "تأكيد وإرسال للمطبخ 📤";
     });
 }
 
