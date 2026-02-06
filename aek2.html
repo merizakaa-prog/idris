@@ -3,168 +3,41 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sweet & Salt | Premium Table 2</title>
+    <title>Sweet & Salt | Table 2 Professional</title>
     
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
     <style>
-        :root {
-            --main: #8b0000;
-            --accent: #27ae60;
-            --bg: #f8fafc;
-            --text: #1e293b;
-        }
+        :root { --main: #8b0000; --accent: #27ae60; --bg: #f4f7f6; }
+        body { margin:0; font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); direction: rtl; }
 
-        body {
-            margin: 0;
-            font-family: 'Segoe UI', Roboto, Helvetica, sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            direction: rtl;
-        }
+        /* الأقسام */
+        .category-bar { display: flex; gap: 12px; padding: 15px; overflow-x: auto; background: #fff; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .cat-item { min-width: 80px; padding: 10px; background: #eee; border-radius: 15px; text-align: center; cursor: pointer; font-weight: 600; color: #666; }
+        .cat-item.active { background: var(--main); color: #fff; }
 
-        /* Header */
-        header {
-            background: #fff;
-            padding: 15px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-        }
-        .logo { font-weight: 800; font-size: 1.2rem; color: var(--main); }
-        .table-no { background: var(--main); color: #fff; padding: 4px 12px; border-radius: 12px; font-size: 0.8rem; }
+        /* الشبكة */
+        .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; padding: 15px; margin-bottom: 120px; }
+        .card { background: #fff; border-radius: 20px; padding: 10px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+        .card img { width: 100%; height: 120px; object-fit: cover; border-radius: 15px; }
 
-        /* Category Bar */
-        .category-bar {
-            display: flex;
-            gap: 12px;
-            padding: 15px;
-            overflow-x: auto;
-            background: #fff;
-            border-bottom: 1px solid #f1f5f9;
-        }
-        .category-bar::-webkit-scrollbar { display: none; }
-        .cat-item {
-            padding: 10px 22px;
-            background: #f1f5f9;
-            border-radius: 15px;
-            white-space: nowrap;
-            cursor: pointer;
-            font-weight: 600;
-            transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .cat-item.active { background: var(--main); color: white; transform: scale(1.05); }
-
-        /* Grid & Cards */
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 16px;
-            padding: 16px;
-            margin-bottom: 110px;
-        }
-        .card {
-            background: #fff;
-            border-radius: 20px;
-            overflow: hidden;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.04);
-            transition: 0.3s;
-            position: relative;
-        }
-        .card:active { transform: scale(0.96); }
-        .card img { width: 100%; height: 130px; object-fit: cover; }
-        .card-body { padding: 12px; text-align: center; }
-        .card-body h4 { margin: 0; font-size: 0.95rem; }
-        .card-price { color: var(--main); font-weight: 800; margin-top: 5px; font-size: 0.9rem; }
-
-        /* Overlays & Panels */
-        .overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(15, 23, 42, 0.7);
-            backdrop-filter: blur(8px);
-            display: none;
-            z-index: 2000;
-            justify-content: center;
-            align-items: flex-end;
-        }
+        /* المودال */
+        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: none; z-index: 2000; backdrop-filter: blur(5px); justify-content: center; align-items: flex-end; }
         .overlay.show { display: flex; }
-        .panel {
-            background: #fff;
-            width: 100%;
-            max-width: 500px;
-            border-radius: 30px 30px 0 0;
-            padding: 25px;
-            box-sizing: border-box;
-            animation: slideIn 0.4s ease-out;
-        }
-        @keyframes slideIn { from { transform: translateY(100%); } to { transform: translateY(0); } }
-
-        .video-box {
-            width: 100%;
-            height: 230px;
-            background: #000;
-            border-radius: 20px;
-            overflow: hidden;
-            margin-bottom: 15px;
-        }
-
-        /* Buttons */
-        .btn-action {
-            width: 100%;
-            padding: 18px;
-            border: none;
-            border-radius: 18px;
-            font-weight: 700;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: 0.3s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-        }
-        .btn-add { background: var(--main); color: white; }
-        .btn-confirm { background: var(--accent); color: white; }
+        .panel { background: #fff; width: 100%; max-width: 500px; border-radius: 30px 30px 0 0; padding: 25px; box-sizing: border-box; position: relative; }
         
-        /* Floating Cart */
-        .float-cart {
-            position: fixed;
-            bottom: 25px; left: 20px; right: 20px;
-            background: var(--main);
-            color: white;
-            padding: 18px 25px;
-            border-radius: 22px;
-            display: flex;
-            justify-content: space-between;
-            box-shadow: 0 10px 30px rgba(139, 0, 0, 0.3);
-            z-index: 1500;
-            cursor: pointer;
-        }
+        .video-box { width: 100%; border-radius: 20px; background: #000; height: 200px; overflow: hidden; margin-bottom: 15px; }
+        .details-box { background: #f9f9f9; padding: 15px; border-radius: 15px; margin-bottom: 15px; border-right: 5px solid var(--main); text-align: right; }
 
-        .spinner {
-            width: 20px; height: 20px;
-            border: 3px solid rgba(255,255,255,0.3);
-            border-top-color: #fff;
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-            display: none;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
+        .btn-main { width: 100%; padding: 18px; border: none; border-radius: 20px; font-weight: bold; cursor: pointer; font-size: 16px; }
+        .float-btn { position: fixed; bottom: 25px; left: 20px; right: 20px; background: var(--main); color: #fff; padding: 20px; border-radius: 22px; display: flex; justify-content: space-between; z-index: 500; box-shadow: 0 10px 25px rgba(139, 0, 0, 0.4); border: none; }
+        
+        .close-icon { position: absolute; top: 15px; left: 20px; font-size: 22px; color: #999; cursor: pointer; }
     </style>
 </head>
 <body>
-
-<header>
-    <div class="logo">Sweet & Salt</div>
-    <div class="table-no">طاولة رقم 2</div>
-</header>
 
 <div class="category-bar">
     <div class="cat-item active" onclick="changeCat('طعام', this)">🍽️ طعام</div>
@@ -177,49 +50,42 @@
 
 <div class="overlay" id="dishOverlay">
     <div class="panel">
+        <i class="fa-solid fa-xmark close-icon" onclick="closeModal('dishOverlay')"></i>
         <div class="video-box">
-            <video id="dishVideo" controls playsinline style="width:100%; height:100%; object-fit: cover;"></video>
+            <video id="dishVideo" controls playsinline style="width:100%; height:100%;"></video>
         </div>
-        <h2 id="dishName" style="margin:0 0 5px 0;"></h2>
-        <div id="dishPrice" style="font-size: 1.4rem; font-weight: 800; color: var(--main); margin-bottom: 15px;"></div>
+        <h2 id="dishName" style="margin:5px 0;"></h2>
+        <p id="dishPrice" style="color:var(--main); font-weight:bold; font-size:22px; margin-bottom:10px;"></p>
         
-        <div style="background: #f8fafc; padding: 15px; border-radius: 15px; margin-bottom: 20px; font-size: 0.9rem; border-right: 4px solid var(--main);">
+        <div class="details-box">
             <div id="dishIng"></div>
-            <div id="dishBen" style="margin-top: 5px; color: var(--accent); font-weight: 600;"></div>
+            <div id="dishBen" style="margin-top:8px; color: var(--accent); font-weight: 600;"></div>
         </div>
 
-        <button class="btn-action btn-add" onclick="handleCart()">
-            <span id="addBtnText">إضافة للطلب 🛒</span>
-        </button>
-        <button onclick="closeModal('dishOverlay')" style="width:100%; background:none; border:none; color:#94a3b8; margin-top:10px; font-weight:600;">إغلاق</button>
+        <button id="addBtn" class="btn-main" onclick="handleCartAction()" style="background:var(--main); color:#fff;">إضافة للطلب 🛒</button>
     </div>
 </div>
 
 <div class="overlay" id="cartOverlay">
     <div class="panel">
-        <h3 style="text-align: center; margin-top: 0;">📋 مراجعة طلب طاولة 2</h3>
-        <div id="cartList" style="max-height: 250px; overflow-y: auto; margin-bottom: 20px;"></div>
-        
-        <div style="display: flex; justify-content: space-between; padding: 15px 0; border-top: 2px dashed #eee; font-weight: 800; font-size: 1.2rem;">
+        <h3 style="text-align: center; border-bottom: 1px solid #eee; padding-bottom: 10px;">📋 طلب طاولة 2</h3>
+        <div id="cartItemsList" style="max-height: 250px; overflow-y: auto;"></div>
+        <div style="display:flex; justify-content:space-between; font-weight:bold; font-size:18px; margin: 15px 0;">
             <span>الإجمالي:</span>
             <span id="finalTotal">0 دج</span>
         </div>
-
-        <button id="sendBtn" class="btn-action btn-confirm" onclick="sendToKitchen()">
-            <span id="sendText">إرسال الطلب للمطبخ 📤</span>
-            <div class="spinner" id="sendSpinner"></div>
-        </button>
-        <button onclick="closeModal('cartOverlay')" style="width:100%; background:none; border:none; color:#94a3b8; margin-top:10px; font-weight:600;">إضافة المزيد</button>
+        <button id="sendBtn" class="btn-main" onclick="sendOrderToKitchen()" style="background:var(--accent); color:#fff;">تأكيد وإرسال للمطبخ 📤</button>
+        <button onclick="closeModal('cartOverlay')" style="width:100%; background:none; border:none; margin-top:10px; color:#999;">إضافة المزيد</button>
     </div>
 </div>
 
-<div class="float-cart" id="floatCart" style="display:none;" onclick="openCart()">
-    <span>الطلبات (<span id="cartCount">0</span>)</span>
-    <span id="floatTotalText">0 دج</span>
-</div>
+<button class="float-btn" id="floatBtn" style="display:none;" onclick="openCart()">
+    <span>عرض الطلبات (<span id="cartCount">0</span>)</span>
+    <span id="floatTotal">0 دج</span>
+</button>
 
 <script>
-// --- Firebase Config ---
+// --- إعدادات Firebase ---
 const firebaseConfig = {
     apiKey: "AIzaSy...", 
     authDomain: "restaurant-e323a.firebaseapp.com",
@@ -234,48 +100,42 @@ const db = firebase.firestore();
 let cart = [];
 let currentItem = null;
 
-// 1. Fetch
-function fetchDishes(cat) {
-    db.collection("dishes").where("category", "==", cat).onSnapshot(snap => {
+function fetchDishes(category) {
+    db.collection("dishes").where("category", "==", category).onSnapshot(snap => {
         const grid = document.getElementById('grid');
         grid.innerHTML = "";
         snap.forEach(doc => {
             const d = doc.data();
             const itemJSON = JSON.stringify(d).replace(/'/g, "&apos;");
             grid.innerHTML += `
-                <div class="card" onclick='openDish(${itemJSON})'>
+                <div class="card" onclick='openModal(${itemJSON})'>
                     <img src="${d.img || ''}">
-                    <div class="card-body">
-                        <h4>${d.name}</h4>
-                        <div class="card-price">${d.price} دج</div>
-                    </div>
+                    <h4>${d.name}</h4>
+                    <p style="color:var(--main); font-weight:bold;">${d.price} دج</p>
                 </div>`;
         });
     });
 }
 
-// 2. Open Dish
-function openDish(item) {
+function openModal(item) {
     currentItem = item;
     document.getElementById('dishName').innerText = item.name;
     document.getElementById('dishPrice').innerText = item.price + " دج";
+    document.getElementById('dishVideo').src = item.video || "";
     
-    const v = document.getElementById('dishVideo');
-    v.src = item.video || "";
-    v.load();
+    // تصحيح عرض الفوائد والمكونات (التأكد من أسماء الحقول في Firestore)
+    const ing = item.ingredients || item.ing || "طبيعية";
+    const ben = item.benefits || item.ben || "صحية";
 
-    const ing = Array.isArray(item.ingredients) ? item.ingredients.join('، ') : (item.ingredients || 'طبيعية');
-    const ben = Array.isArray(item.benefits) ? item.benefits.join('، ') : (item.benefits || 'طازجة');
     document.getElementById('dishIng').innerHTML = `<b>المكونات:</b> ${ing}`;
-    document.getElementById('dishBen').innerHTML = `<b>الميزة:</b> ${ben}`;
+    document.getElementById('dishBen').innerHTML = `<b>الفوائد:</b> ${ben}`;
 
     const isIn = cart.some(i => i.name === item.name);
-    document.getElementById('addBtnText').innerText = isIn ? "إزالة من السلة ❌" : "إضافة للطلب 🛒";
+    document.getElementById('addBtn').innerText = isIn ? "إزالة من الطلب ❌" : "إضافة للطلب 🛒";
     document.getElementById('dishOverlay').classList.add('show');
 }
 
-// 3. Cart Logic
-function handleCart() {
+function handleCartAction() {
     const idx = cart.findIndex(i => i.name === currentItem.name);
     if(idx > -1) cart.splice(idx, 1);
     else cart.push(currentItem);
@@ -285,82 +145,65 @@ function handleCart() {
 }
 
 function updateUI() {
-    const count = cart.length;
-    document.getElementById('cartCount').innerText = count;
+    document.getElementById('cartCount').innerText = cart.length;
     const total = cart.reduce((s, i) => s + parseInt(i.price || 0), 0);
-    document.getElementById('floatTotalText').innerText = total + " دج";
-    document.getElementById('floatCart').style.display = count > 0 ? 'flex' : 'none';
+    document.getElementById('floatTotal').innerText = total + " دج";
+    document.getElementById('floatBtn').style.display = cart.length > 0 ? 'flex' : 'none';
 }
 
 function openCart() {
-    const list = document.getElementById('cartList');
+    const list = document.getElementById('cartItemsList');
     list.innerHTML = "";
     let total = 0;
     cart.forEach((item, index) => {
         total += parseInt(item.price || 0);
-        list.innerHTML += `
-            <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; border-bottom:1px solid #f1f5f9;">
-                <div><b>${item.name}</b><br><small style="color:var(--main)">${item.price} دج</small></div>
-                <i class="fas fa-trash-alt" style="color:#ef4444; cursor:pointer;" onclick="removeItem(${index})"></i>
-            </div>`;
+        list.innerHTML += `<div style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid #eee;">
+            <span>${item.name}</span>
+            <i class="fa-solid fa-trash" style="color:red;" onclick="removeItem(${index})"></i>
+        </div>`;
     });
     document.getElementById('finalTotal').innerText = total + " دج";
     document.getElementById('cartOverlay').classList.add('show');
 }
 
-function removeItem(i) {
-    cart.splice(i, 1);
+function removeItem(idx) {
+    cart.splice(idx, 1);
     updateUI();
-    if(cart.length === 0) closeModal('cartOverlay');
-    else openCart();
+    if(cart.length === 0) closeModal('cartOverlay'); else openCart();
 }
 
-// 4. Send Order (The Success Fix for Table 2)
-function sendToKitchen() {
-    if(cart.length === 0) return;
-    
+// --- وظيفة الإرسال المصححة والمطابقة للكود رقم 1 ---
+function sendOrderToKitchen() {
     const btn = document.getElementById('sendBtn');
-    const text = document.getElementById('sendText');
-    const spinner = document.getElementById('sendSpinner');
-
     btn.disabled = true;
-    spinner.style.display = "block";
-    text.innerText = "جاري الإرسال...";
+    btn.innerText = "جاري الإرسال...";
 
     const orderData = {
         items: cart,
         total: cart.reduce((s, i) => s + parseInt(i.price || 0), 0),
-        table: 2,               // رقم الطاولة رقمي
-        tableNumber: "2",       // رقم الطاولة نصي
-        status: "جديد",         // حالة الطلب
+        table: 2,                     // رقمي
+        tableNumber: "2",             // نصي (للتوافق)
+        status: "جديد",
         time: firebase.firestore.FieldValue.serverTimestamp(),
-        createdAt: firebase.firestore.FieldValue.serverTimestamp() // حقل الترتيب الزمني
+        createdAt: firebase.firestore.FieldValue.serverTimestamp() // مهم جداً للمطبخ
     };
 
     db.collection("menu").add(orderData).then(() => {
-        setTimeout(() => {
-            alert("✅ تم إرسال طلب الطاولة 2 بنجاح!");
-            cart = [];
-            updateUI();
-            closeModal('cartOverlay');
-            btn.disabled = false;
-            spinner.style.display = "none";
-            text.innerText = "إرسال الطلب للمطبخ 📤";
-        }, 800);
-    }).catch(err => {
-        alert("❌ خطأ: " + err.message);
+        alert("✅ تم إرسال طلب طاولة 2 بنجاح!");
+        cart = [];
+        updateUI();
+        closeModal('cartOverlay');
         btn.disabled = false;
-        spinner.style.display = "none";
-        text.innerText = "إرسال الطلب للمطبخ 📤";
+        btn.innerText = "تأكيد وإرسال للمطبخ 📤";
+    }).catch(err => {
+        alert("خطأ: " + err.message);
+        btn.disabled = false;
     });
 }
 
 function closeModal(id) {
     document.getElementById(id).classList.remove('show');
-    if(id === 'dishOverlay') {
-        const v = document.getElementById('dishVideo');
-        v.pause(); v.src = "";
-    }
+    if(id === 'dishOverlay') document.getElementById('dishVideo').pause();
 }
 
 function changeCat(cat, el) {
