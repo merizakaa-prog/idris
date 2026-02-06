@@ -3,42 +3,46 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sweet & Salt Menu</title>
-    
+    <title>Sweet & Salt | Menu</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
     <style>
         :root { --main: #8b0000; --accent: #27ae60; --bg: #f4f7f6; }
-        body { margin:0; font-family: 'Segoe UI', sans-serif; background: var(--bg); direction: rtl; }
+        body { margin:0; font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); direction: rtl; }
         
         /* شاشة القفل */
         #lockScreen { display:none; position:fixed; inset:0; background:#fff; z-index:9999; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:20px; }
         #mainContent { display:none; }
 
-        /* التصميم */
         .category-bar { display: flex; gap: 12px; padding: 15px; overflow-x: auto; background: #fff; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
         .cat-item { min-width: 80px; padding: 10px; background: #eee; border-radius: 15px; text-align: center; cursor: pointer; font-weight: 600; color: #666; }
         .cat-item.active { background: var(--main); color: #fff; }
+
         .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; padding: 15px; margin-bottom: 120px; }
         .card { background: #fff; border-radius: 20px; padding: 10px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
         .card img { width: 100%; height: 110px; object-fit: cover; border-radius: 15px; }
 
-        /* الأزرار والمودال */
         .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: none; z-index: 2000; backdrop-filter: blur(8px); justify-content: center; align-items: flex-end; }
         .overlay.show { display: flex; }
-        .panel { background: #fff; width: 100%; max-width: 500px; border-radius: 30px 30px 0 0; padding: 25px; box-sizing: border-box; position: relative; }
-        .btn-main { width: 100%; padding: 18px; border: none; border-radius: 20px; font-weight: bold; cursor: pointer; font-size: 16px; background: var(--main); color: #fff; }
+        .panel { background: #fff; width: 100%; max-width: 500px; border-radius: 30px 30px 0 0; padding: 25px; box-sizing: border-box; position: relative; animation: slideUp 0.3s ease-out; }
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        
+        .close-video-btn { position: absolute; top: -50px; left: 50%; transform: translateX(-50%); background: #fff; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; color: var(--main); cursor: pointer; }
+
+        .video-box { width: 100%; border-radius: 20px; background: #000; height: 200px; overflow: hidden; margin-bottom: 15px; }
+        .btn-main { width: 100%; padding: 18px; border: none; border-radius: 20px; font-weight: bold; cursor: pointer; font-size: 16px; transition: 0.2s; }
         .float-btn { position: fixed; bottom: 25px; left: 20px; right: 20px; background: var(--main); color: #fff; padding: 20px; border-radius: 22px; display: flex; justify-content: space-between; z-index: 500; border: none; }
     </style>
 </head>
 <body>
 
 <div id="lockScreen">
-    <i class="fas fa-lock" style="font-size:50px; color:var(--main);"></i>
-    <h2>عذراً، هذه الطاولة مشغولة</h2>
-    <p>يرجى الانتظار أو مراجعة الكاشير.</p>
+    <i class="fas fa-lock" style="font-size:60px; color:var(--main); margin-bottom:20px;"></i>
+    <h2>هذه الطاولة مشغولة حالياً</h2>
+    <p>يرجى الانتظار حتى يغادر الزبون الحالي.</p>
+    <button onclick="location.reload()" style="margin-top:20px; padding:10px 25px; background:var(--main); color:#fff; border:none; border-radius:10px;">تحديث الصفحة</button>
 </div>
 
 <div id="mainContent">
@@ -50,66 +54,96 @@
     <div id="grid" class="grid"></div>
 </div>
 
+<div class="overlay" id="dishOverlay">
+    <div class="panel">
+        <div class="close-video-btn" onclick="closeModal('dishOverlay')"><i class="fa-solid fa-xmark"></i></div>
+        <div class="video-box"><video id="dishVideo" controls playsinline style="width:100%; height:100%; object-fit: cover;"></video></div>
+        <h2 id="dishName"></h2>
+        <p id="dishPrice" style="color:var(--main); font-weight:bold; font-size:22px;"></p>
+        <div id="dishDetails" style="background:#f9f9f9; padding:10px; border-radius:10px; margin-bottom:15px; font-size:14px;"></div>
+        <button id="addBtn" class="btn-main" onclick="handleCartAction()" style="background:var(--main); color:#fff;">إضافة للطلب 🛒</button>
+    </div>
+</div>
+
 <button class="float-btn" id="floatBtn" style="display:none;" onclick="openCart()">
-    <span>عرض السلة (<span id="cartCount">0</span>)</span>
+    <span>عرض الطلبات (<span id="cartCount">0</span>)</span>
     <span id="floatTotal">0 دج</span>
 </button>
 
 <script>
-// إعدادات Firebase
-const firebaseConfig = { apiKey: "...", projectId: "restaurant-e323a", ... }; // ضع إعداداتك هنا
+// --- إعدادات Firebase (ضع إعداداتك هنا) ---
+const firebaseConfig = {
+    apiKey: "AIzaSy...",
+    projectId: "restaurant-e323a",
+    // ... بقية الإعدادات
+};
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
-// تحديد الطاولة والجلسة
 const urlParams = new URLSearchParams(window.location.search);
 const MY_TABLE = urlParams.get('table') || "1"; 
 
-if (!sessionStorage.getItem('my_session')) {
-    sessionStorage.setItem('my_session', 'sess_' + Date.now());
+if (!sessionStorage.getItem('cust_sid')) {
+    sessionStorage.setItem('cust_sid', 'client_' + Math.random().toString(36).substr(2, 9));
 }
-const mySession = sessionStorage.getItem('my_session');
+const mySid = sessionStorage.getItem('cust_sid');
 
-// نظام الحماية من التكرار (حل مشكلة الاختفاء)
-function checkLock() {
+// --- نظام الحماية الذكي ---
+function initSystem() {
     const tableRef = db.collection("tables_status").doc(MY_TABLE);
     
     tableRef.onSnapshot((doc) => {
         if (doc.exists) {
             const data = doc.data();
-            if (data.isBusy === true && data.currentUser !== mySession) {
+            if (data.isBusy && data.currentUser !== mySid) {
                 document.getElementById('lockScreen').style.display = 'flex';
                 document.getElementById('mainContent').style.display = 'none';
-            } else if (data.isBusy === true && data.currentUser === mySession) {
+            } else if (data.isBusy && data.currentUser === mySid) {
                 document.getElementById('lockScreen').style.display = 'none';
                 document.getElementById('mainContent').style.display = 'block';
                 if(document.getElementById('grid').innerHTML === "") fetchDishes('طعام');
             } else {
-                // الطاولة فارغة، احجزها لي
-                tableRef.update({ isBusy: true, currentUser: mySession });
+                tableRef.update({ isBusy: true, currentUser: mySid });
             }
+        } else {
+            tableRef.set({ isBusy: false, currentUser: "" });
         }
     });
 }
 
-function fetchDishes(category) {
-    db.collection("dishes").where("category", "==", category).onSnapshot(snap => {
+function fetchDishes(cat) {
+    db.collection("dishes").where("category", "==", cat).onSnapshot(snap => {
         const grid = document.getElementById('grid');
         grid.innerHTML = "";
         snap.forEach(doc => {
             const d = doc.data();
+            const encoded = encodeURIComponent(JSON.stringify(d));
             grid.innerHTML += `
-                <div class="card" onclick='openModal(${JSON.stringify(d)})'>
-                    <img src="${d.img}">
+                <div class="card" onclick="openModalFromData('${encoded}')">
+                    <img src="${d.img || ''}">
                     <h4>${d.name}</h4>
-                    <p>${d.price} دج</p>
+                    <p style="color:var(--main); font-weight:bold;">${d.price} دج</p>
                 </div>`;
         });
     });
 }
 
-// تشغيل النظام
-window.onload = checkLock;
+function openModalFromData(data) {
+    const item = JSON.parse(decodeURIComponent(data));
+    document.getElementById('dishName').innerText = item.name;
+    document.getElementById('dishPrice').innerText = item.price + " دج";
+    document.getElementById('dishVideo').src = item.video || "";
+    document.getElementById('dishDetails').innerHTML = `<b>المكونات:</b> ${item.ingredients || item.ing || 'طازجة'}`;
+    document.getElementById('dishOverlay').classList.add('show');
+}
+
+function closeModal(id) {
+    document.getElementById(id).classList.remove('show');
+    const v = document.getElementById('dishVideo');
+    v.pause(); v.src = "";
+}
+
+window.onload = initSystem;
 </script>
 </body>
 </html>
