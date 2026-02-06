@@ -1,181 +1,164 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sweet & Salt | القائمة الرقمية</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-    
     <style>
-        :root { --primary: #8b0000; --accent: #27ae60; --bg: #f8f9fa; }
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Tajawal', sans-serif; -webkit-tap-highlight-color: transparent; }
-        body { background: var(--bg); color: #2c3e50; direction: rtl; }
+        /* --- تحسينات الفيديو الاحترافية --- */
+        .video-container {
+            position: relative;
+            width: 100%;
+            height: 250px;
+            background: #000;
+            border-radius: 25px;
+            overflow: hidden;
+            margin-bottom: 15px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
 
-        .nav-header { background: linear-gradient(135deg, var(--primary) 0%, #6b0000 100%); color: white; padding: 15px 20px; position: sticky; top: 0; z-index: 1000; text-align: center; }
+        /* جعل الفيديو يملأ الحاوية بشكل متناسق */
+        video#dishVideo {
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* لضمان ملء المساحة بالكامل مثل تيك توك */
+            display: block;
+        }
 
-        .category-bar { display: flex; gap: 12px; padding: 15px; overflow-x: auto; background: white; position: sticky; top: 55px; z-index: 900; }
-        .cat-item { padding: 8px 20px; background: #eee; border-radius: 25px; cursor: pointer; font-weight: 600; white-space: nowrap; }
-        .cat-item.active { background: var(--primary); color: white; }
+        /* طبقة تظليل جمالية فوق الفيديو */
+        .video-overlay {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, transparent 40%, rgba(0,0,0,0.5) 100%);
+            pointer-events: none; /* للسماح بالنقر على الفيديو نفسه */
+            z-index: 1;
+        }
 
-        .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; padding: 15px; margin-bottom: 100px; }
-        .card { background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05); cursor: pointer; border: 1px solid #f0f0f0; }
-        .card img { width: 100%; height: 120px; object-fit: cover; }
-        .card-body { padding: 10px; text-align: center; }
+        /* أيقونة تشغيل تظهر في البداية */
+        .play-hint {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(139, 0, 0, 0.85);
+            color: white;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            z-index: 2;
+            animation: pulse 2s infinite;
+            cursor: pointer;
+        }
 
-        .overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: none; z-index: 9999; justify-content: center; align-items: flex-end; backdrop-filter: blur(5px); }
-        .overlay.show { display: flex; }
-        .content-panel { background: white; width: 100%; max-width: 500px; border-radius: 30px 30px 0 0; padding: 25px; position: relative; animation: slideUp 0.3s ease-out; }
-        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(139, 0, 0, 0.7); }
+            70% { box-shadow: 0 0 0 15px rgba(139, 0, 0, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(139, 0, 0, 0); }
+        }
 
-        .media-box { width: 100%; height: 230px; background: #000; border-radius: 20px; overflow: hidden; margin-bottom: 15px; }
-        #dishVideo { width: 100%; height: 100%; object-fit: cover; }
+        /* إخفاء أيقونة التشغيل بمجرد بدء الفيديو */
+        .video-playing .play-hint, 
+        .video-playing .video-overlay {
+            opacity: 0;
+            visibility: hidden;
+            transition: 0.5s;
+        }
 
-        .details-box { background: #f9f9f9; padding: 15px; border-radius: 15px; margin: 15px 0; border-right: 5px solid var(--primary); font-size: 14px; text-align: right; }
-        
-        .btn-add { width: 100%; padding: 18px; border: none; border-radius: 15px; background: var(--primary); color: white; font-weight: bold; cursor: pointer; font-size: 16px; margin-top: 5px; }
-        .btn-add:active { transform: scale(0.98); background: #6b0000; }
-        
-        .close-icon { position: absolute; top: 15px; left: 20px; font-size: 26px; color: #999; cursor: pointer; z-index: 10; }
-        
-        .float-cart { position: fixed; bottom: 20px; left: 20px; right: 20px; background: var(--primary); color: white; padding: 18px 25px; border-radius: 50px; display: flex; justify-content: space-between; align-items: center; z-index: 1000; box-shadow: 0 10px 25px rgba(139, 0, 0, 0.3); }
+        /* تحسين شكل المودال */
+        .content-panel {
+            border-radius: 35px 35px 0 0 !important;
+            box-shadow: 0 -10px 40px rgba(0,0,0,0.3);
+        }
     </style>
 </head>
 <body>
 
-<div class="nav-header"><h3>Sweet & Salt - طاولة 2</h3></div>
-
-<div class="category-bar">
-    <div class="cat-item active" onclick="loadDishes('طعام', this)">🍽️ طعام</div>
-    <div class="cat-item" onclick="loadDishes('مشروبات', this)">🥤 مشروبات</div>
-    <div class="cat-item" onclick="loadDishes('تحلية', this)">🍰 تحلية</div>
-</div>
-
-<div id="grid" class="grid"></div>
-
-<div class="overlay" id="dishModal">
+<div class="overlay" id="dishOverlay">
     <div class="content-panel">
-        <i class="fas fa-times-circle close-icon" onclick="closeModal()"></i>
+        <i class="fa-solid fa-circle-xmark close-icon" onclick="closeModal('dishOverlay')" 
+           style="top: -15px; left: 50%; transform: translateX(-50%); font-size: 35px; color: #fff; background: var(--main); border-radius: 50%;"></i>
         
-        <div class="media-box">
-            <video id="dishVideo" controls playsinline></video>
+        <div class="video-container" id="vidCont">
+            <div class="video-overlay"></div>
+            <div class="play-hint" id="playHint"><i class="fas fa-play"></i></div>
+            
+            <video id="dishVideo" 
+                   playsinline 
+                   preload="metadata"
+                   onclick="togglePlay()">
+            </video>
         </div>
 
-        <h2 id="modalTitle" style="text-align: center;"></h2>
-        <p id="modalPrice" style="color:var(--primary); font-size: 1.6rem; font-weight: 800; text-align:center; margin: 5px 0;"></p>
+        <h2 id="dishName" style="margin:10px 0; text-align: center;"></h2>
+        <p id="dishPrice" style="color:var(--main); font-weight:900; font-size:26px; text-align: center;"></p>
         
         <div class="details-box">
-            <p id="modalIng"><strong>المكونات:</strong> </p>
-            <p id="modalBen" style="margin-top:8px; color:var(--accent); font-weight: 600;"><strong>الفوائد:</strong> </p>
+            <div id="dishIng"></div>
+            <div id="dishBen" style="margin-top:8px; color: var(--accent); font-weight: 600;"></div>
         </div>
 
-        <button class="btn-add" id="addToCartBtn" onclick="toggleCartAction()">إضافة للطلب 🛒</button>
+        <button id="addBtn" class="btn-main" onclick="handleCartAction()" style="background:var(--main); color:#fff; border-radius: 20px;">
+            <span id="addBtnText">إضافة للطلب 🛒</span>
+            <div class="spinner" id="addSpinner"></div>
+        </button>
     </div>
 </div>
 
-<div class="float-cart" onclick="alert('جاري تجهيز قائمة الطلبات...')">
-    <span>الطلبات (<span id="count">0</span>)</span>
-    <span id="total">0 دج</span>
-</div>
-
 <script>
-// --- تكوين Firebase ---
-const firebaseConfig = { apiKey: "AIzaSy...", authDomain: "restaurant-e323a.firebaseapp.com", projectId: "restaurant-e323a" };
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
+// --- نفس دالة جلب البيانات السابقة ---
 
-let cart = [];
-let currentItem = null;
-
-// جلب المنتجات
-function loadDishes(cat, el) {
-    if(el) {
-        document.querySelectorAll('.cat-item').forEach(i => i.classList.remove('active'));
-        el.classList.add('active');
-    }
-    db.collection("dishes").where("category", "==", cat).onSnapshot(snap => {
-        const grid = document.getElementById('grid');
-        grid.innerHTML = "";
-        snap.forEach(doc => {
-            const data = doc.data();
-            const itemJSON = JSON.stringify(data).replace(/'/g, "&apos;");
-            grid.innerHTML += `
-                <div class="card" onclick='openModal(${itemJSON})'>
-                    <img src="${data.img}">
-                    <div class="card-body">
-                        <h4>${data.name}</h4>
-                        <p style="color:var(--primary); font-weight:bold; margin-top:5px;">${data.price} دج</p>
-                    </div>
-                </div>`;
-        });
-    });
-}
-
-// فتح المودال
 function openModal(item) {
     currentItem = item;
-    document.getElementById('modalTitle').innerText = item.name;
-    document.getElementById('modalPrice').innerText = item.price + " دج";
+    document.getElementById('dishName').innerText = item.name;
+    document.getElementById('dishPrice').innerText = item.price + " دج";
     
-    // الفوائد والمكونات
-    document.getElementById('modalIng').innerHTML = `<strong>المكونات:</strong> ${item.ingredients || "طبيعية"}`;
-    document.getElementById('modalBen').innerHTML = `<strong>الفوائد:</strong> ${item.benefits || "صحية وغنية"}`;
+    const v = document.getElementById('dishVideo');
+    const cont = document.getElementById('vidCont');
     
-    // الفيديو
-    const vid = document.getElementById('dishVideo');
-    vid.src = item.video || ""; 
-    vid.poster = item.img || ""; 
+    // 1. إعادة تعيين شكل الحاوية
+    cont.classList.remove('video-playing');
     
-    // تحديث نص الزر إذا كان العنصر موجوداً مسبقاً في السلة
+    // 2. ضبط الفيديو (استخدام الصورة كغلاف Poster)
+    v.src = item.video || "";
+    v.poster = item.img || ""; // تظهر الصورة كخلفية احترافية للفيديو
+    v.load(); 
+
+    // 3. المكونات والفوائد
+    const ingredients = Array.isArray(item.ingredients) ? item.ingredients.join('، ') : (item.ingredients || 'طبيعية');
+    const benefits = Array.isArray(item.benefits) ? item.benefits.join('، ') : (item.benefits || 'صحية وغنية');
+    document.getElementById('dishIng').innerHTML = `<i class="fas fa-leaf"></i> <b>المكونات:</b> ${ingredients}`;
+    document.getElementById('dishBen').innerHTML = `<i class="fas fa-star"></i> <b>الفوائد:</b> ${benefits}`;
+
+    // 4. تحديث حالة الزر
     const isInCart = cart.some(i => i.name === item.name);
-    document.getElementById('addToCartBtn').innerText = isInCart ? "إزالة من الطلب ❌" : "إضافة للطلب 🛒";
-
-    document.getElementById('dishModal').classList.add('show');
+    document.getElementById('addBtnText').innerText = isInCart ? "إزالة من الطلب ❌" : "إضافة للطلب 🛒";
+    
+    document.getElementById('dishOverlay').classList.add('show');
 }
 
-// دالة السلة المصححة
-function toggleCartAction() {
-    if(!currentItem) return;
-
-    const index = cart.findIndex(i => i.name === currentItem.name);
+// دالة لتشغيل/إيقاف الفيديو بالنقر عليه
+function togglePlay() {
+    const v = document.getElementById('dishVideo');
+    const cont = document.getElementById('vidCont');
     
-    if (index > -1) {
-        // إذا كان موجوداً، نقوم بحذفه
-        cart.splice(index, 1);
+    if (v.paused) {
+        v.play();
+        cont.classList.add('video-playing');
     } else {
-        // إذا لم يكن موجوداً، نقوم بإضافته
-        cart.push(currentItem);
+        v.pause();
+        cont.classList.remove('video-playing');
     }
-
-    updateCartUI();
-    closeModal();
 }
 
-// تحديث واجهة السلة
-function updateCartUI() {
-    // تحديث العدد
-    document.getElementById('count').innerText = cart.length;
-    
-    // حساب الإجمالي
-    const totalSum = cart.reduce((sum, item) => {
-        // التأكد من تحويل السعر لرقم بشكل صحيح
-        let price = String(item.price).replace(/[^0-9]/g, '');
-        return sum + (parseInt(price) || 0);
-    }, 0);
-    
-    document.getElementById('total').innerText = totalSum + " دج";
+function closeModal(id) {
+    document.getElementById(id).classList.remove('show');
+    const v = document.getElementById('dishVideo');
+    v.pause();
+    v.currentTime = 0; // إعادة الفيديو للبداية
 }
 
-function closeModal() {
-    const vid = document.getElementById('dishVideo');
-    vid.pause();
-    vid.src = "";
-    document.getElementById('dishModal').classList.remove('show');
-}
-
-// التشغيل عند التحميل
-window.onload = () => loadDishes('طعام');
+// ... (باقي دوال السلة السابقة) ...
 </script>
 </body>
 </html>
