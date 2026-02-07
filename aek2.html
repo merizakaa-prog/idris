@@ -10,21 +10,22 @@
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
     <style>
-        :root { --main: #8b0000; --accent: #27ae60; --bg: #f4f7f6; }
-        body { margin:0; font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); direction: rtl; overflow-x: hidden; }
+        :root { --main: #8b0000; --accent: #27ae60; --bg: #f4f7f6; --text: #333; }
+        body { margin:0; font-family: 'Segoe UI', Tahoma, sans-serif; background: var(--bg); direction: rtl; color: var(--text); overflow-x: hidden; }
 
-        /* شاشة القفل */
+        /* شاشة القفل المحسنة */
         #lockScreen { display:none; position:fixed; inset:0; background:#fff; z-index:9999; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:20px; }
         #mainContent { display:none; }
 
-        /* شريط التصنيفات */
+        /* شريط الأقسام */
         .category-bar { display: flex; gap: 12px; padding: 15px; overflow-x: auto; background: #fff; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
         .cat-item { min-width: 90px; padding: 12px; background: #fff; border: 1px solid #eee; border-radius: 18px; text-align: center; cursor: pointer; font-weight: 600; color: #666; transition: 0.3s; white-space: nowrap; }
         .cat-item.active { background: var(--main); color: #fff; transform: translateY(-3px); }
 
-        /* شبكة المنتجات */
+        /* الشبكة */
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 15px; padding: 15px; margin-bottom: 120px; }
-        .card { background: #fff; border-radius: 20px; padding: 10px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.05); cursor: pointer; transition: 0.3s; }
+        .card { background: #fff; border-radius: 20px; padding: 10px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.05); transition: 0.3s; cursor: pointer; }
+        .card:active { transform: scale(0.95); }
         .card img { width: 100%; height: 130px; object-fit: cover; border-radius: 15px; background: #eee; }
 
         /* المودالات */
@@ -33,13 +34,12 @@
         .content-panel { background: #fff; width: 100%; max-width: 500px; border-radius: 30px 30px 0 0; padding: 25px; box-sizing: border-box; animation: slideUp 0.4s ease-out; position: relative; }
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
 
-        /* تفاصيل الطبق */
-        .details-box { background: #f9f9f9; padding: 15px; border-radius: 15px; margin: 15px 0; font-size: 14px; border-right: 5px solid var(--main); text-align: right; }
+        .details-box { background: #f9f9f9; padding: 15px; border-radius: 15px; margin: 15px 0; font-size: 14px; border-right: 5px solid var(--main); text-align: right; line-height: 1.6; }
         video { width: 100%; border-radius: 20px; background: #000; max-height: 250px; margin-bottom: 10px; }
-        .close-icon { position: absolute; top: 15px; left: 20px; font-size: 22px; color: #999; cursor: pointer; z-index: 10; }
+        .close-icon { position: absolute; top: 15px; left: 20px; font-size: 22px; color: #999; cursor: pointer; }
 
         .btn-main { width: 100%; padding: 18px; border: none; border-radius: 20px; font-weight: bold; cursor: pointer; font-size: 16px; display: flex; justify-content: center; align-items: center; gap: 10px; }
-        .float-btn { position: fixed; bottom: 25px; left: 20px; right: 20px; background: var(--main); color: #fff; padding: 20px; border-radius: 22px; z-index: 500; display: flex; justify-content: space-between; border: none; box-shadow: 0 10px 25px rgba(139,0,0,0.4); }
+        .float-btn { position: fixed; bottom: 25px; left: 20px; right: 20px; background: var(--main); color: #fff; padding: 20px; border-radius: 22px; z-index: 500; display: none; justify-content: space-between; border: none; box-shadow: 0 10px 25px rgba(139,0,0,0.4); }
         
         .spinner { width: 20px; height: 20px; border: 3px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: #fff; animation: spin 0.8s linear infinite; display: none; }
         @keyframes spin { to { transform: rotate(360deg); } }
@@ -48,10 +48,9 @@
 <body>
 
 <div id="lockScreen">
-    <i class="fas fa-user-lock" style="font-size:60px; color:var(--main); margin-bottom:20px;"></i>
-    <h2>هذه الطاولة مشغولة الآن</h2>
-    <p>يرجى انتظار خروج الزبون السابق أو طلب المساعدة من الكاشير.</p>
-    <button onclick="location.reload()" style="margin-top:15px; background:var(--main); color:#fff; border:none; padding:10px 20px; border-radius:10px;">تحديث الصفحة</button>
+    <i class="fas fa-user-lock" style="font-size:70px; color:var(--main); margin-bottom:20px;"></i>
+    <h2>الطاولة رقم 1 مشغولة</h2>
+    <p>يرجى الانتظار حتى يتم تحرير الطاولة من قبل الكاشير.</p>
 </div>
 
 <div id="mainContent">
@@ -61,7 +60,6 @@
         <div class="cat-item" onclick="changeCat('تحلية', this)">🍰 تحلية</div>
         <div class="cat-item" onclick="changeCat('قاطو', this)">🍪 قاطو</div>
     </div>
-
     <div id="grid" class="grid"></div>
 </div>
 
@@ -71,12 +69,10 @@
         <video id="dishVideo" controls playsinline></video>
         <h2 id="dishName" style="margin:5px 0;"></h2>
         <p id="dishPrice" style="color:var(--main); font-weight:bold; font-size:22px; margin:0;"></p>
-        
         <div class="details-box">
             <div id="dishIng"></div>
             <div id="dishBen" style="margin-top:8px; color: var(--accent); font-weight: 500;"></div>
         </div>
-
         <button id="addBtn" class="btn-main" onclick="handleCartAction()" style="background:var(--main); color:#fff;">
             <span id="addBtnText">إضافة للطلب 🛒</span>
             <div class="spinner" id="addSpinner"></div>
@@ -86,19 +82,16 @@
 
 <div class="overlay" id="cartOverlay">
     <div class="content-panel">
-        <h3 style="text-align: center; border-bottom: 1px solid #eee; padding-bottom: 10px;">📋 تأكيد طلب الطاولة 1</h3>
+        <h3 style="text-align: center; border-bottom: 1px solid #eee; padding-bottom: 10px;">📋 مراجعة طلب طاولة 1</h3>
         <div id="cartItemsList" style="max-height:300px; overflow-y:auto; margin-bottom:20px;"></div>
-        
         <div style="display:flex; justify-content:space-between; font-weight:bold; font-size:18px; margin-bottom:20px;">
             <span>الإجمالي:</span>
             <span id="finalTotal">0 دج</span>
         </div>
-
         <button id="sendBtn" class="btn-main" onclick="sendOrderToKitchen()" style="background:var(--accent); color:#fff;">
-            <span id="sendBtnText">إرسال الطلب للمطبخ 📤</span>
+            <span id="sendBtnText">تأكيد وإرسال للمطبخ 📤</span>
             <div class="spinner" id="sendSpinner"></div>
         </button>
-        <button onclick="closeModal('cartOverlay')" style="width:100%; background:none; border:none; margin-top:10px; color:#999;">إغلاق</button>
     </div>
 </div>
 
@@ -108,44 +101,40 @@
 </button>
 
 <script>
-// --- إعدادات Firebase (استخدم بياناتك الحقيقية هنا) ---
+// --- 1. إعدادات Firebase ---
 const firebaseConfig = {
-    apiKey: "AIzaSy...",
-    projectId: "restaurant-e323a",
+    apiKey: "AIzaSy...", 
     authDomain: "restaurant-e323a.firebaseapp.com",
+    projectId: "restaurant-e323a",
     storageBucket: "restaurant-e323a.appspot.com",
+    messagingSenderId: "309092455734",
+    appId: "..."
 };
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
+// --- 2. متغيرات الجلسة والطاولة ---
 const TABLE_ID = "1";
 let cart = [];
 let currentItem = null;
 
-// نظام الجلسة
 if (!sessionStorage.getItem('cust_sid')) {
     sessionStorage.setItem('cust_sid', 'user_' + Math.random().toString(36).substr(2, 9));
 }
 const mySid = sessionStorage.getItem('cust_sid');
 
-// --- 1. نظام الربط والحماية مع الصندوق ---
-function initTableSystem() {
+// --- 3. نظام الربط اللحظي والحماية ---
+function initSystem() {
     const tableRef = db.collection("tables_status").doc(TABLE_ID);
-
     tableRef.onSnapshot((doc) => {
         if (doc.exists) {
             const data = doc.data();
-            // إذا كانت مشغولة لشخص آخر
             if (data.isBusy && data.currentUser !== mySid) {
                 document.getElementById('lockScreen').style.display = 'flex';
                 document.getElementById('mainContent').style.display = 'none';
-            } 
-            // إذا كانت فارغة (احجزها لي فوراً - سيراها الصندوق حمراء)
-            else if (!data.isBusy) {
+            } else if (!data.isBusy) {
                 tableRef.update({ isBusy: true, currentUser: mySid });
-            }
-            // إذا كانت لي
-            else {
+            } else {
                 document.getElementById('lockScreen').style.display = 'none';
                 document.getElementById('mainContent').style.display = 'block';
                 if(document.getElementById('grid').innerHTML === "") fetchDishes('طعام');
@@ -156,16 +145,16 @@ function initTableSystem() {
     });
 }
 
-// --- 2. جلب البيانات ---
+// --- 4. جلب وعرض المنتجات ---
 function fetchDishes(category) {
     db.collection("dishes").where("category", "==", category).onSnapshot(snap => {
         const grid = document.getElementById('grid');
         grid.innerHTML = "";
         snap.forEach(doc => {
             const d = doc.data();
-            const itemData = encodeURIComponent(JSON.stringify(d));
+            const dataStr = encodeURIComponent(JSON.stringify(d));
             grid.innerHTML += `
-                <div class="card" onclick="openDetails('${itemData}')">
+                <div class="card" onclick="openModal('${dataStr}')">
                     <img src="${d.img || ''}">
                     <h4>${d.name}</h4>
                     <p style="color:var(--main); font-weight:bold;">${d.price} دج</p>
@@ -174,42 +163,31 @@ function fetchDishes(category) {
     });
 }
 
-// --- 3. إدارة النافذة المنبثقة (Modal) ---
-function openDetails(encodedData) {
-    currentItem = JSON.parse(decodeURIComponent(encodedData));
+function openModal(data) {
+    currentItem = JSON.parse(decodeURIComponent(data));
     document.getElementById('dishName').innerText = currentItem.name;
     document.getElementById('dishPrice').innerText = currentItem.price + " دج";
     document.getElementById('dishVideo').src = currentItem.video || "";
+    document.getElementById('dishIng').innerHTML = `<b>المكونات:</b> ${currentItem.ingredients || 'طبيعية طازجة'}`;
+    document.getElementById('dishBen').innerHTML = `<b>الفوائد:</b> ${currentItem.benefits || 'صحية ومغذية'}`;
     
-    document.getElementById('dishIng').innerHTML = `<b>المكونات:</b> ${currentItem.ingredients || 'طبيعية'}`;
-    document.getElementById('dishBen').innerHTML = `<b>الفوائد:</b> ${currentItem.benefits || 'صحية وغنية'}`;
-
     const isInCart = cart.some(i => i.name === currentItem.name);
     document.getElementById('addBtnText').innerText = isInCart ? "إزالة من الطلب ❌" : "إضافة للطلب 🛒";
-    
     document.getElementById('dishOverlay').classList.add('show');
-    if(currentItem.video) document.getElementById('dishVideo').play();
 }
 
-// --- 4. إدارة السلة ---
+// --- 5. نظام السلة والإرسال للصندوق ---
 function handleCartAction() {
-    const spinner = document.getElementById('addSpinner');
-    spinner.style.display = "block";
-
-    setTimeout(() => {
-        const idx = cart.findIndex(i => i.name === currentItem.name);
-        if(idx > -1) cart.splice(idx, 1);
-        else cart.push(currentItem);
-        
-        updateUI();
-        spinner.style.display = "none";
-        closeModal('dishOverlay');
-    }, 400);
+    const idx = cart.findIndex(i => i.name === currentItem.name);
+    if(idx > -1) cart.splice(idx, 1);
+    else cart.push(currentItem);
+    updateUI();
+    closeModal('dishOverlay');
 }
 
 function updateUI() {
     document.getElementById('cartCount').innerText = cart.length;
-    const total = cart.reduce((sum, item) => sum + parseInt(item.price), 0);
+    const total = cart.reduce((s, i) => s + parseInt(i.price), 0);
     document.getElementById('floatTotal').innerText = total + " دج";
     document.getElementById('floatBtn').style.display = cart.length > 0 ? "flex" : "none";
 }
@@ -218,51 +196,39 @@ function openCartConfirmation() {
     const list = document.getElementById('cartItemsList');
     list.innerHTML = "";
     let total = 0;
-    cart.forEach((item, idx) => {
+    cart.forEach(item => {
         total += parseInt(item.price);
-        list.innerHTML += `
-            <div style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid #eee;">
-                <span>${item.name}</span>
-                <span style="color:var(--main);">${item.price} دج</span>
-            </div>`;
+        list.innerHTML += `<div style="display:flex; justify-content:space-between; padding:10px; border-bottom:1px solid #eee;">
+            <span>${item.name}</span><b>${item.price} دج</b></div>`;
     });
     document.getElementById('finalTotal').innerText = total + " دج";
     document.getElementById('cartOverlay').classList.add('show');
 }
 
-// --- 5. إرسال الطلب ---
 function sendOrderToKitchen() {
-    if(cart.length === 0) return;
     const btn = document.getElementById('sendBtn');
-    const spinner = document.getElementById('sendSpinner');
-    
-    btn.disabled = true;
-    spinner.style.display = "block";
+    const spin = document.getElementById('sendSpinner');
+    btn.disabled = true; spin.style.display = "block";
 
     const orderData = {
-        items: cart,
-        total: cart.reduce((s, i) => s + parseInt(i.price), 0),
         table: 1,
+        tableNumber: "1",
+        items: cart.map(i => ({ name: i.name, price: i.price })),
+        total: cart.reduce((s, i) => s + parseInt(i.price), 0),
         status: "جديد",
-        time: firebase.firestore.FieldValue.serverTimestamp()
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
     };
 
     db.collection("caisse").add(orderData).then(() => {
-        alert("✅ تم إرسال طلبك! سيتصل بك النادل قريباً.");
-        cart = [];
-        updateUI();
-        closeModal('cartOverlay');
-        btn.disabled = false;
-        spinner.style.display = "none";
-    });
+        alert("✅ تم إرسال طلبك بنجاح!");
+        cart = []; updateUI(); closeModal('cartOverlay');
+    }).catch(e => alert("خطأ: " + e.message))
+    .finally(() => { btn.disabled = false; spin.style.display = "none"; });
 }
 
 function closeModal(id) {
     document.getElementById(id).classList.remove('show');
-    if(id === 'dishOverlay') {
-        const v = document.getElementById('dishVideo');
-        v.pause(); v.src = "";
-    }
+    if(id === 'dishOverlay') { document.getElementById('dishVideo').pause(); }
 }
 
 function changeCat(cat, el) {
@@ -271,7 +237,7 @@ function changeCat(cat, el) {
     fetchDishes(cat);
 }
 
-window.onload = initTableSystem;
+window.onload = initSystem;
 </script>
 </body>
 </html>
