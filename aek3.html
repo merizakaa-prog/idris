@@ -1,1 +1,127 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>منيو Sweet & Salt</title>
+    
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8f9fa; margin: 0; padding: 20px; text-align: center; }
+        .menu-container { max-width: 600px; margin: auto; background: white; padding: 20px; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        h1 { color: #d35400; }
+        .item-card { border: 1px solid #ddd; padding: 15px; margin: 10px 0; border-radius: 12px; display: flex; justify-content: space-between; align-items: center; }
+        button { background-color: #27ae60; color: white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-size: 16px; }
+        button:active { transform: scale(0.98); }
+        #lockScreen { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 1000; flex-direction: column; justify-content: center; align-items: center; }
+        #statusTag { color: #7f8c8d; font-size: 14px; margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+
+<div id="lockScreen">
+    <h2 style="color: #e74c3c;">هذه الطاولة مشغولة حالياً 🔴</h2>
+    <p>يرجى طلب المساعدة من النادل أو اختيار طاولة أخرى.</p>
+</div>
+
+<div class="menu-container" id="mainContent">
+    <h1>Sweet & Salt 🍔</h1>
+    <div id="statusTag">جاري الاتصال بالطاولة...</div>
+
+    <div class="item-card">
+        <span>بيتزا مارغريتا (1200 دج)</span>
+        <button onclick="addToCart('بيتزا مارغريتا', 1200)">إضافة +</button>
+    </div>
+
+    <div class="item-card">
+        <span>برجر دجاج (850 دج)</span>
+        <button onclick="addToCart('برجر دجاج', 850)">إضافة +</button>
+    </div>
+
+    <hr>
+    <button style="background: #e67e22; width: 100%; padding: 15px;" onclick="sendOrder()">إرسال الطلب للصندوق 📤</button>
+</div>
+
+<script>
+    // 1. إعدادات Firebase
+    const firebaseConfig = {
+        apiKey: "AIzaSy...", 
+        projectId: "restaurant-e323a",
+        appId: "..."
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    // 2. متغيرات الجلسة
+    const TABLE_ID = "1"; // رقم الطاولة (يجب أن يطابق الأندرويد)
+    let mySid = localStorage.getItem('mySid') || Math.random().toString(36).substr(2, 9);
+    localStorage.setItem('mySid', mySid);
+    
+    let isSessionActive = true; 
+    let cart = [];
+
+    // 3. مراقبة حالة الطاولة وإنهاء الجلسة عند الدفع
+    function listenToTable() {
+        const tableRef = db.collection("tables_status").doc(TABLE_ID);
+
+        tableRef.onSnapshot((doc) => {
+            if (!isSessionActive) return;
+
+            if (doc.exists) {
+                const data = doc.data();
+
+                // الحل الجذري: إذا استقبل المنيو إشارة "released" من الصندوق
+                if (data.currentUser === "released" || (data.isBusy === false && data.currentUser === "")) {
+                    isSessionActive = false;
+                    alert("تم إغلاق الحساب بنجاح. شكراً لزيارتكم!");
+                    document.getElementById('mainContent').innerHTML = "<h2>شكراً لزيارتكم! نرجو أن تكونوا قد استمتعتم بوجبتكم. 😊</h2>";
+                    return;
+                }
+
+                // منع التداخل مع زبون آخر
+                if (data.isBusy && data.currentUser !== mySid) {
+                    document.getElementById('lockScreen').style.display = 'flex';
+                } else {
+                    document.getElementById('lockScreen').style.display = 'none';
+                    document.getElementById('statusTag').innerText = "متصل بالطاولة " + TABLE_ID + " ✅";
+                    
+                    // حجز الطاولة إذا كانت فارغة
+                    if (!data.isBusy) {
+                        tableRef.set({ isBusy: true, currentUser: mySid }, { merge: true });
+                    }
+                }
+            }
+        });
+    }
+
+    // 4. إضافة للسلة
+    function addToCart(name, price) {
+        cart.push({ name: name, price: price });
+        alert("تمت إضافة " + name);
+    }
+
+    // 5. إرسال الطلب لمجموعة caisse بنفس الأسماء التي يطلبها الأندرويد
+    function sendOrder() {
+        if (cart.length === 0) return alert("السلة فارغة!");
+
+        const total = cart.reduce((sum, item) => sum + item.price, 0);
+
+        db.collection("caisse").add({
+            hn: parseInt(TABLE_ID), // رقم الطاولة (رقمي كما في قاعدة بياناتك)
+            plat: cart.map(item => ({ pla1: item.name, pr1: item.price })), // التنسيق الذي يقرأه الأندرويد
+            total: total,
+            status: "جديد",
+            time: firebase.firestore.FieldValue.serverTimestamp()
+        }).then(() => {
+            alert("تم إرسال الطلب! سيتم تحضيره الآن.");
+            cart = []; 
+        });
+    }
+
+    window.onload = listenToTable;
+</script>
+
+</body>
+</html>
